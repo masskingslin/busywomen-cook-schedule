@@ -28,6 +28,24 @@ Just double-click `index.html`, or open it in any browser.
 - Tap the filter chips, then **Generate month schedule** to build 4 weeks. Each week draws 7 distinct dishes per meal, so nothing repeats within a week, and the app also tries to avoid repeating last week's picks.
 - Your last generated plan and filter choices are saved automatically and reload next time you open the app.
 
+## Turn on monetization (free to set up)
+
+Open `index.html`, find the `CONFIG` object near the top of the `<script>` section:
+
+```js
+const CONFIG = {
+  amazonTag: "kingcloud-21",
+  amazonDomain: "amazon.in"
+};
+```
+
+**Affiliate ingredient links (🛒 icon on every meal)** — already set to tag `kingcloud-21`.
+- This only earns if `kingcloud-21` is a tag from **your own** Amazon Associates account. If it isn't yours, swap it out — using someone else's tag sends them the commission, not you.
+- Double check `amazonDomain` matches the storefront your tag is registered on (`amazon.in`, `amazon.com`, etc. — Associates tags are region-specific and won't earn on the wrong domain).
+- Every 🛒 tap opens an Amazon search for that dish's ingredients with your tag attached — you earn a commission on anything purchased in that session.
+- Amazon requires 3 qualifying sales within 180 days of signup or the account gets closed, so it's worth driving some traffic soon after you sign up.
+- Affiliate disclosure is already built into the header and footer, as required by the Amazon Associates program.
+
 ## Customize the menu
 Open `index.html`, find the `DISHES` array near the top of the `<script>` section, and add, remove, or edit entries. Each dish needs:
 ```js

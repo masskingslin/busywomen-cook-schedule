@@ -320,6 +320,27 @@
     border-bottom:1px solid #EFE6CC;
   }
   .meal-row:last-child{border-bottom:none;}
+  .shop-link{
+    flex-shrink:0;
+    width:30px;height:30px;
+    border-radius:8px;
+    background:rgba(91,140,90,0.12);
+    color:var(--leaf);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;
+    text-decoration:none;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .shop-link:active{transform:scale(0.92);}
+  .today-card .shop-link{background:rgba(231,167,44,0.16);color:var(--turmeric);}
+
+  .disclosure{
+    font-size:11.5px;
+    line-height:1.5;
+    color:#B9C9C6;
+    margin:12px 0 0;
+    max-width:48ch;
+  }
   .meal-icon{
     font-family:'JetBrains Mono', monospace;
     font-size:9.5px;
@@ -391,6 +412,7 @@
       <span><span class="pep">🌶🌶</span> <b>2</b> = medium</span>
       <span><span class="pep">🌶🌶🌶</span> <b>3</b> = hard</span>
     </div>
+    <p class="disclosure">🛒 icons are Amazon affiliate links — as an Amazon Associate this app earns from qualifying purchases, at no extra cost to you.</p>
     <div class="live-strip">
       <span class="live-dot"></span>
       <span class="live-text">Live</span>
@@ -437,7 +459,7 @@
     <div class="empty-state">Set your filters above and tap <b>Generate month schedule</b> to build your 4-week plan.</div>
   </div>
 
-  <footer>BUSYWOMEN COOK SCHEDULE &middot; PLAN ONCE, COOK ALL MONTH</footer>
+  <footer>BUSYWOMEN COOK SCHEDULE &middot; PLAN ONCE, COOK ALL MONTH<br>As an Amazon Associate, this app earns from qualifying purchases</footer>
 </div>
 
 <script>
@@ -518,6 +540,19 @@ const DISHES = [
   {name:"Curd Vada", meal:"dinner", category:"south-indian", difficulty:"hard", time:40},
   {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", difficulty:"easy", time:20},
 ];
+
+// ---------- MONETIZATION CONFIG ----------
+// Free to set up: sign up for Amazon Associates (affiliate.amazon.in or
+// .com), then drop your own tracking tag here.
+const CONFIG = {
+  amazonTag: "kingcloud-21",
+  amazonDomain: "amazon.in"          // use "amazon.com" for US, etc.
+};
+
+function shopLink(dishName){
+  const q = encodeURIComponent(dishName + " ingredients");
+  return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
+}
 
 const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const PEPPER = {easy:"🌶", medium:"🌶🌶", hard:"🌶🌶🌶"};
@@ -687,6 +722,7 @@ function dishRowHTML(label, dish, mealKey, currentMeal){
           <span class="time-badge">⏱ ${dish.time} min</span>
         </div>
       </div>
+      <a class="shop-link" href="${shopLink(dish.name)}" target="_blank" rel="noopener sponsored" title="Shop ingredients for ${dish.name} (Amazon affiliate link)">🛒</a>
     </div>`;
 }
 
