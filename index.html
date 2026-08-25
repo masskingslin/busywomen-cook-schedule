@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Busywomen Cook Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal-deep:#123B3A;
+    --teal-mid:#1B5450;
+    --teal-line:#2B6864;
+    --cream:#FBF3E4;
+    --cream-dim:#F3E7CE;
+    --turmeric:#E7A72C;
+    --chili:#C1442D;
+    --leaf:#5B8C5A;
+    --ink:#1B1B16;
+    --ink-soft:#5A5A50;
+    --white:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--teal-deep);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding-bottom:60px;}
+
+  /* HERO */
+  .hero{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(231,167,44,0.18), transparent 45%),
+      radial-gradient(circle at 85% 0%, rgba(193,68,45,0.16), transparent 40%),
+      var(--teal-deep);
+    color:var(--cream);
+    padding:34px 22px 26px;
+    border-bottom:1px solid var(--teal-line);
+    position:relative;
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--turmeric);
+    margin:0 0 10px;
+  }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:34px;
+    line-height:1.05;
+    margin:0 0 10px;
+    color:var(--cream);
+  }
+  h1.title em{
+    color:var(--turmeric);
+    font-style:italic;
+  }
+  .sub{
+    font-size:14.5px;
+    line-height:1.5;
+    color:#D9D3C1;
+    margin:0 0 22px;
+    max-width:46ch;
+  }
+
+  /* SPICE LEGEND (signature element) */
+  .legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--teal-line);
+    border-radius:12px;
+    padding:12px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:#D9D3C1;
+  }
+  .legend span.pep{color:var(--chili);}
+  .legend b{color:var(--cream);font-weight:600;}
+
+  /* FILTER PANEL */
+  .panel{
+    background:var(--cream);
+    margin:-16px 14px 0;
+    border-radius:16px;
+    padding:18px 18px 16px;
+    box-shadow:0 14px 30px rgba(0,0,0,0.25);
+    position:relative;
+    z-index:2;
+  }
+  .panel h2{
+    font-family:'Fraunces', serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 12px;
+    color:var(--teal-deep);
+  }
+  .filter-group{margin-bottom:14px;}
+  .filter-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+    display:block;
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    border:1.5px solid #D8CBA9;
+    background:var(--white);
+    color:var(--ink);
+    font-size:13px;
+    font-weight:500;
+    padding:7px 13px;
+    border-radius:999px;
+    cursor:pointer;
+    user-select:none;
+    transition:all .15s ease;
+    display:flex;align-items:center;gap:6px;
+  }
+  .chip.active{
+    border-color:transparent;
+  }
+  .chip[data-val="veg"].active{background:var(--leaf);color:var(--white);}
+  .chip[data-val="non-veg"].active{background:var(--chili);color:var(--white);}
+  .chip[data-val="south-indian"].active{background:var(--turmeric);color:var(--teal-deep);}
+  .chip[data-val="easy"].active,
+  .chip[data-val="medium"].active,
+  .chip[data-val="hard"].active{background:var(--teal-mid);color:var(--white);}
+  .chip.quick.active{background:var(--ink);color:var(--white);}
+
+  .gen-btn{
+    width:100%;
+    margin-top:6px;
+    background:var(--chili);
+    color:var(--white);
+    border:none;
+    border-radius:12px;
+    padding:14px;
+    font-family:'Work Sans',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:.01em;
+    cursor:pointer;
+    transition:transform .1s ease, background .15s ease;
+  }
+  .gen-btn:active{transform:scale(0.98);}
+  .gen-btn:hover{background:#a83824;}
+
+  .note{
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:10px;
+  }
+
+  /* SCHEDULE */
+  .schedule{padding:22px 14px 0;}
+  .week-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin:28px 4px 12px;
+    color:var(--cream);
+  }
+  .week-head .wk-num{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--turmeric);
+  }
+  .week-head .wk-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#B9C9C6;
+  }
+  .week-head hr{
+    flex:1;
+    border:none;
+    border-top:1px dashed var(--teal-line);
+  }
+
+  .day-card{
+    background:var(--cream);
+    border-radius:14px;
+    margin-bottom:12px;
+    overflow:hidden;
+    box-shadow:0 6px 16px rgba(0,0,0,0.18);
+  }
+  .day-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--teal-deep);
+    padding:12px 16px 8px;
+    border-bottom:1px solid #EADFC2;
+  }
+  .meal-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 16px;
+    border-bottom:1px solid #EFE6CC;
+  }
+  .meal-row:last-child{border-bottom:none;}
+  .meal-icon{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    width:56px;
+    flex-shrink:0;
+  }
+  .meal-main{flex:1;min-width:0;}
+  .meal-name{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 3px;
+  }
+  .meal-meta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:5px;
+    font-weight:600;
+  }
+  .tag.veg{background:rgba(91,140,90,0.15);color:var(--leaf);}
+  .tag.non-veg{background:rgba(193,68,45,0.13);color:var(--chili);}
+  .tag.south-indian{background:rgba(231,167,44,0.18);color:#96660F;}
+  .peppers{color:var(--chili);font-size:11px;letter-spacing:1px;}
+  .time-badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+
+  .empty-state{
+    color:#D9D3C1;
+    text-align:center;
+    padding:50px 24px;
+    font-size:14px;
+    line-height:1.6;
+  }
+  .empty-state b{color:var(--turmeric);}
+
+  footer{
+    text-align:center;
+    color:#8FA3A0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    padding:30px 20px 10px;
+    letter-spacing:.04em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">/// 4-week rotation, zero repeats per week</p>
+    <h1 class="title">Busywomen<br><em>Cook Schedule</em></h1>
+    <p class="sub">Pick what you eat, how spicy the effort gets, and how much time you have. We'll lay out breakfast, lunch and dinner for the whole month &mdash; no dish repeated within the same week.</p>
+    <div class="legend">
+      <span><span class="pep">🌶</span> <b>1</b> = easy</span>
+      <span><span class="pep">🌶🌶</span> <b>2</b> = medium</span>
+      <span><span class="pep">🌶🌶🌶</span> <b>3</b> = hard</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Build your month</h2>
+
+    <div class="filter-group">
+      <span class="filter-label">Food type</span>
+      <div class="chips" id="cat-chips">
+        <div class="chip active" data-val="veg">🌿 Veg</div>
+        <div class="chip active" data-val="non-veg">🍗 Non-veg</div>
+        <div class="chip active" data-val="south-indian">🥥 South Indian</div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Effort level</span>
+      <div class="chips" id="diff-chips">
+        <div class="chip active" data-val="easy">🌶 Easy</div>
+        <div class="chip active" data-val="medium">🌶🌶 Medium</div>
+        <div class="chip active" data-val="hard">🌶🌶🌶 Hard</div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Time filter</span>
+      <div class="chips" id="time-chips">
+        <div class="chip quick" data-val="quick">⏱ Quick only (≤20 min)</div>
+      </div>
+    </div>
+
+    <button class="gen-btn" id="genBtn">Generate month schedule</button>
+    <p class="note" id="poolNote"></p>
+  </div>
+
+  <div class="schedule" id="scheduleOutput">
+    <div class="empty-state">Set your filters above and tap <b>Generate month schedule</b> to build your 4-week plan.</div>
+  </div>
+
+  <footer>BUSYWOMEN COOK SCHEDULE &middot; PLAN ONCE, COOK ALL MONTH</footer>
+</div>
+
+<script>
+// ---------- DISH DATABASE ----------
+const DISHES = [
+  // BREAKFAST — veg
+  {name:"Poha", meal:"breakfast", category:"veg", difficulty:"easy", time:15},
+  {name:"Vegetable Upma", meal:"breakfast", category:"veg", difficulty:"easy", time:20},
+  {name:"Besan Chilla", meal:"breakfast", category:"veg", difficulty:"easy", time:15},
+  {name:"Stuffed Aloo Paratha", meal:"breakfast", category:"veg", difficulty:"medium", time:30},
+  {name:"Vegetable Daliya", meal:"breakfast", category:"veg", difficulty:"easy", time:20},
+  {name:"Moong Dal Chilla", meal:"breakfast", category:"veg", difficulty:"medium", time:25},
+  {name:"Vegetable Sandwich", meal:"breakfast", category:"veg", difficulty:"easy", time:10},
+  // BREAKFAST — non-veg
+  {name:"Egg Bhurji", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
+  {name:"Omelette & Toast", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10},
+  {name:"Chicken Sausage Wrap", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
+  {name:"Egg Paratha", meal:"breakfast", category:"non-veg", difficulty:"medium", time:25},
+  {name:"Keema Paratha", meal:"breakfast", category:"non-veg", difficulty:"hard", time:40},
+  {name:"Boiled Egg Salad", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10},
+  {name:"Chicken Sandwich", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
+  // BREAKFAST — south indian
+  {name:"Idli & Sambar", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
+  {name:"Plain Dosa", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
+  {name:"Masala Dosa", meal:"breakfast", category:"south-indian", difficulty:"hard", time:35},
+  {name:"Uttapam", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
+  {name:"Ven Pongal", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
+  {name:"Rava Idli", meal:"breakfast", category:"south-indian", difficulty:"easy", time:20},
+  {name:"Medu Vada", meal:"breakfast", category:"south-indian", difficulty:"hard", time:40},
+
+  // LUNCH — veg
+  {name:"Dal Tadka & Rice", meal:"lunch", category:"veg", difficulty:"easy", time:25},
+  {name:"Mixed Veg Curry & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35},
+  {name:"Rajma Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:40},
+  {name:"Chole Bhature", meal:"lunch", category:"veg", difficulty:"hard", time:50},
+  {name:"Paneer Butter Masala & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35},
+  {name:"Vegetable Pulao", meal:"lunch", category:"veg", difficulty:"medium", time:30},
+  {name:"Kadhi Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:30},
+  // LUNCH — non-veg
+  {name:"Chicken Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:40},
+  {name:"Egg Curry & Roti", meal:"lunch", category:"non-veg", difficulty:"easy", time:25},
+  {name:"Fish Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35},
+  {name:"Mutton Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"hard", time:60},
+  {name:"Chicken Biryani", meal:"lunch", category:"non-veg", difficulty:"hard", time:55},
+  {name:"Butter Chicken & Naan", meal:"lunch", category:"non-veg", difficulty:"hard", time:50},
+  {name:"Prawn Masala & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35},
+  // LUNCH — south indian
+  {name:"Sambar Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:25},
+  {name:"Rasam Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20},
+  {name:"Curd Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:10},
+  {name:"Bisi Bele Bath", meal:"lunch", category:"south-indian", difficulty:"medium", time:35},
+  {name:"Lemon Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20},
+  {name:"Vegetable Kootu & Rice", meal:"lunch", category:"south-indian", difficulty:"medium", time:30},
+  {name:"Chettinad Chicken & Rice", meal:"lunch", category:"south-indian", difficulty:"hard", time:50},
+
+  // DINNER — veg
+  {name:"Vegetable Soup & Bread", meal:"dinner", category:"veg", difficulty:"easy", time:15},
+  {name:"Palak Paneer & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30},
+  {name:"Vegetable Khichdi", meal:"dinner", category:"veg", difficulty:"easy", time:25},
+  {name:"Baingan Bharta & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30},
+  {name:"Stuffed Capsicum", meal:"dinner", category:"veg", difficulty:"hard", time:40},
+  {name:"Mixed Dal & Roti", meal:"dinner", category:"veg", difficulty:"easy", time:25},
+  {name:"Vegetable Fried Rice", meal:"dinner", category:"veg", difficulty:"medium", time:25},
+  // DINNER — non-veg
+  {name:"Grilled Chicken & Salad", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
+  {name:"Egg Fried Rice", meal:"dinner", category:"non-veg", difficulty:"easy", time:20},
+  {name:"Chicken Stew & Appam", meal:"dinner", category:"non-veg", difficulty:"hard", time:45},
+  {name:"Fish Fry & Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
+  {name:"Chicken Soup", meal:"dinner", category:"non-veg", difficulty:"easy", time:20},
+  {name:"Mutton Stew", meal:"dinner", category:"non-veg", difficulty:"hard", time:50},
+  {name:"Prawn Fried Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
+  // DINNER — south indian
+  {name:"Dosa & Coconut Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:25},
+  {name:"Idiyappam & Veg Curry", meal:"dinner", category:"south-indian", difficulty:"hard", time:40},
+  {name:"Adai & Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:30},
+  {name:"Vegetable Stew & Appam", meal:"dinner", category:"south-indian", difficulty:"medium", time:35},
+  {name:"Rava Upma", meal:"dinner", category:"south-indian", difficulty:"easy", time:20},
+  {name:"Curd Vada", meal:"dinner", category:"south-indian", difficulty:"hard", time:40},
+  {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", difficulty:"easy", time:20},
+];
+
+const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const PEPPER = {easy:"🌶", medium:"🌶🌶", hard:"🌶🌶🌶"};
+const CAT_LABEL = {"veg":"Veg","non-veg":"Non-veg","south-indian":"South Indian"};
+
+let state = {
+  categories: new Set(["veg","non-veg","south-indian"]),
+  difficulties: new Set(["easy","medium","hard"]),
+  quickOnly: false,
+};
+
+// ---------- FILTER CHIP WIRING ----------
+function wireChips(containerId, targetSet, singleToggleVal){
+  document.querySelectorAll('#'+containerId+' .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const val = chip.dataset.val;
+      if(singleToggleVal){
+        state.quickOnly = !state.quickOnly;
+        chip.classList.toggle('active', state.quickOnly);
+        return;
+      }
+      if(targetSet.has(val)){
+        if(targetSet.size===1) return; // keep at least one selected
+        targetSet.delete(val);
+        chip.classList.remove('active');
+      } else {
+        targetSet.add(val);
+        chip.classList.add('active');
+      }
+    });
+  });
+}
+wireChips('cat-chips', state.categories, false);
+wireChips('diff-chips', state.difficulties, false);
+wireChips('time-chips', null, true);
+
+// ---------- SCHEDULING ----------
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function filteredPool(meal){
+  return DISHES.filter(d=>
+    d.meal===meal &&
+    state.categories.has(d.category) &&
+    state.difficulties.has(d.difficulty) &&
+    (!state.quickOnly || d.time<=20)
+  );
+}
+
+// Build 7 picks for a week from a pool, minimizing repeats and avoiding
+// repeats used in the previous week when the pool allows it.
+function pickWeek(pool, prevWeekPicks){
+  if(pool.length===0) return null;
+  let candidates = shuffle(pool);
+  // try to avoid dishes used last week
+  let avoiding = candidates.filter(d=>!prevWeekPicks.includes(d.name));
+  let usable = avoiding.length>=7 ? avoiding : candidates;
+
+  const picks = [];
+  const used = new Set();
+  let cursor = shuffle(usable);
+  let idx = 0;
+  while(picks.length<7){
+    if(idx>=cursor.length){
+      // ran out of unique options, allow repeats (only if pool < 7)
+      cursor = shuffle(pool);
+      idx = 0;
+      if(pool.length < 7 && picks.length < 7 && idx===0 && used.size>=pool.length){
+        // reset used tracking to allow controlled repeats
+      }
+    }
+    const d = cursor[idx];
+    if(!used.has(d.name) || pool.length<7){
+      picks.push(d);
+      used.add(d.name);
+    }
+    idx++;
+    if(idx>500) break; // safety
+  }
+  return picks;
+}
+
+function generateSchedule(){
+  const meals = ["breakfast","lunch","dinner"];
+  const pools = {};
+  let insufficient = [];
+  meals.forEach(m=>{
+    pools[m] = filteredPool(m);
+    if(pools[m].length < 7) insufficient.push(m+" ("+pools[m].length+" dish"+(pools[m].length===1?"":"es")+" available)");
+  });
+
+  const noteEl = document.getElementById('poolNote');
+  if(pools.breakfast.length===0 || pools.lunch.length===0 || pools.dinner.length===0){
+    noteEl.textContent = "No dishes match this combination of filters. Try widening your selection.";
+    document.getElementById('scheduleOutput').innerHTML = '<div class="empty-state">No matches. Loosen a filter and try again.</div>';
+    return;
+  }
+  noteEl.textContent = insufficient.length
+    ? "Heads up: " + insufficient.join(", ") + " — some dishes may repeat within a week."
+    : "4 weeks planned. No dish repeats within the same week.";
+
+  const weeks = [];
+  let prevPicks = {breakfast:[], lunch:[], dinner:[]};
+  for(let w=0; w<4; w++){
+    const weekMeals = {};
+    meals.forEach(m=>{
+      const picks = pickWeek(pools[m], prevPicks[m]);
+      weekMeals[m] = picks;
+      prevPicks[m] = picks.map(d=>d.name);
+    });
+    const days = DAY_NAMES.map((dayName, i)=>({
+      day: dayName,
+      breakfast: weekMeals.breakfast[i],
+      lunch: weekMeals.lunch[i],
+      dinner: weekMeals.dinner[i],
+    }));
+    weeks.push(days);
+  }
+  return weeks;
+}
+
+function dishRowHTML(label, dish){
+  if(!dish) return '';
+  return `
+    <div class="meal-row">
+      <div class="meal-icon">${label}</div>
+      <div class="meal-main">
+        <p class="meal-name">${dish.name}</p>
+        <div class="meal-meta">
+          <span class="tag ${dish.category}">${CAT_LABEL[dish.category]}</span>
+          <span class="peppers">${PEPPER[dish.difficulty]}</span>
+          <span class="time-badge">⏱ ${dish.time} min</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderSchedule(weeks){
+  const out = document.getElementById('scheduleOutput');
+  if(!weeks){ return; }
+  let html = '';
+  weeks.forEach((days, wi)=>{
+    html += `<div class="week-head"><span class="wk-num">Week ${wi+1}</span><span class="wk-label">7 days &middot; no repeats</span><hr></div>`;
+    days.forEach(d=>{
+      html += `<div class="day-card">
+        <div class="day-title">${d.day}</div>
+        ${dishRowHTML('Breakfast', d.breakfast)}
+        ${dishRowHTML('Lunch', d.lunch)}
+        ${dishRowHTML('Dinner', d.dinner)}
+      </div>`;
+    });
+  });
+  out.innerHTML = html;
+}
+
+async function saveState(weeks){
+  try{
+    await window.storage.set('last-schedule', JSON.stringify({
+      weeks,
+      categories: [...state.categories],
+      difficulties: [...state.difficulties],
+      quickOnly: state.quickOnly
+    }));
+  }catch(e){ console.error('Could not save schedule', e); }
+}
+
+async function loadState(){
+  try{
+    const res = await window.storage.get('last-schedule');
+    if(res && res.value){
+      const data = JSON.parse(res.value);
+      if(data.categories){
+        state.categories = new Set(data.categories);
+        state.difficulties = new Set(data.difficulties);
+        state.quickOnly = !!data.quickOnly;
+        syncChipsToState();
+      }
+      if(data.weeks){
+        renderSchedule(data.weeks);
+        document.getElementById('poolNote').textContent = "Showing your last generated plan.";
+      }
+    }
+  }catch(e){ /* no saved schedule yet */ }
+}
+
+function syncChipsToState(){
+  document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.toggle('active', state.categories.has(c.dataset.val)));
+  document.querySelectorAll('#diff-chips .chip').forEach(c=>c.classList.toggle('active', state.difficulties.has(c.dataset.val)));
+  document.querySelectorAll('#time-chips .chip').forEach(c=>c.classList.toggle('active', state.quickOnly));
+}
+
+document.getElementById('genBtn').addEventListener('click', ()=>{
+  const weeks = generateSchedule();
+  if(weeks){
+    renderSchedule(weeks);
+    saveState(weeks);
+  }
+});
+
+loadState();
+</script>
+</body>
+</html>
