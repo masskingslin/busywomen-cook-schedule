@@ -25,11 +25,12 @@ Just double-click `index.html`, or open it in any browser.
 
 ## How it works
 - All dishes (86 total: 63 home-cooked + 23 ready-made/instant) live in the `DISHES` array inside `index.html`, split across Veg, Non-veg, and South Indian, for breakfast, lunch, and dinner.
-- Ready-made/instant items (frozen parathas, MTR-style mixes, ready-to-eat curry packs, etc.) are tagged `readymade:true` and carry a **📦 Ready-made** badge — they're all easy difficulty and 5–10 minutes, so they surface heavily under the "Quick only" filter.
-- Every dish shows **two** Amazon buy buttons, in this order: **📦 Ready-made** (searches for a store-bought version of that dish) first, then **🛒 Ingredients** (searches for what you'd need to cook it) second — ready-made gets first preference as requested.
-- A separate **Kids' Snacks & Drinks** panel (toggle it on with the "🧒 Show kids' snacks & drinks" chip) lists 16 curated healthy snack/drink picks with their own Amazon buy buttons — this list is independent of the weekly meal schedule.
+- Every home-cooked dish carries its own real `ingredients` list (e.g. Poha → poha, peanuts, mustard seeds, curry leaves). The **🛒 Ingredients** button searches Amazon using those actual ingredient names, not the dish name — so it returns raw grocery items instead of ready-made packs.
+- Home-cooked dishes show two buttons: **📦 Ready-made** (searches for a store-bought version of that dish) and **🛒 Ingredients** (searches the dish's real ingredient list), in that order.
+- Ready-made/instant items (frozen parathas, MTR-style mixes, ready-to-eat curry packs, etc.) are tagged `readymade:true`, carry a **📦 Ready-made** badge, and show a single **📦 Buy** button since there's no separate "ingredients" version — they're already store-bought.
+- **Kids' Snacks & Drinks** lives on its own tab, completely separate from the meal schedule — tap "🧒 Kids' Snacks & Drinks" at the top to switch to a fixed list of 16 curated healthy picks (makhana, ragi cookies, flavoured milk, coconut water, etc.), each with its own Amazon buy button.
 - Tap the filter chips, then **Generate month schedule** to build 4 weeks. Each week draws 7 distinct dishes per meal, so nothing repeats within a week, and the app also tries to avoid repeating last week's picks.
-- Your last generated plan and filter choices (including whether the kids' panel is open) are saved automatically and reload next time you open the app.
+- Your last generated plan and filter choices are saved automatically and reload next time you open the app.
 
 ## Turn on monetization (free to set up)
 

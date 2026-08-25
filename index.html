@@ -133,6 +133,30 @@
     white-space:nowrap;
   }
 
+  /* TAB BAR */
+  .tab-bar{
+    display:flex;
+    gap:8px;
+    padding:16px 14px 0;
+  }
+  .tab-btn{
+    flex:1;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--teal-line);
+    color:#D9D3C1;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    padding:11px 8px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--turmeric);
+    border-color:var(--turmeric);
+    color:var(--teal-deep);
+  }
+
   /* TODAY CARD */
   .today-card{
     background:var(--teal-mid);
@@ -159,6 +183,7 @@
   .today-card .meal-icon{color:#B9C9C6;}
   .today-card .meal-name{color:var(--cream);}
   .today-card .time-badge{color:#B9C9C6;}
+  .today-card .ingredients-list{color:#9FB3B0;}
   .today-card .meal-row.current{
     background:rgba(231,167,44,0.14);
     position:relative;
@@ -195,7 +220,7 @@
   /* FILTER PANEL */
   .panel{
     background:var(--cream);
-    margin:-16px 14px 0;
+    margin:14px 14px 0;
     border-radius:16px;
     padding:18px 18px 16px;
     box-shadow:0 14px 30px rgba(0,0,0,0.25);
@@ -430,6 +455,12 @@
     gap:8px;
     flex-wrap:wrap;
   }
+  .ingredients-list{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin:5px 0 0;
+    line-height:1.4;
+  }
   .tag{
     font-family:'JetBrains Mono', monospace;
     font-size:10px;
@@ -479,7 +510,6 @@
       <span><span class="pep">🌶🌶</span> <b>2</b> = medium</span>
       <span><span class="pep">🌶🌶🌶</span> <b>3</b> = hard</span>
     </div>
-    <p class="disclosure">🛒 icons are Amazon affiliate links — as an Amazon Associate this app earns from qualifying purchases, at no extra cost to you.</p>
     <div class="live-strip">
       <span class="live-dot"></span>
       <span class="live-text">Live</span>
@@ -490,50 +520,50 @@
 
   <div id="todaySlot"></div>
 
-  <div class="panel">
-    <h2>Build your month</h2>
-
-    <div class="filter-group">
-      <span class="filter-label">Food type</span>
-      <div class="chips" id="cat-chips">
-        <div class="chip active" data-val="veg">🌿 Veg</div>
-        <div class="chip active" data-val="non-veg">🍗 Non-veg</div>
-        <div class="chip active" data-val="south-indian">🥥 South Indian</div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <span class="filter-label">Effort level</span>
-      <div class="chips" id="diff-chips">
-        <div class="chip active" data-val="easy">🌶 Easy</div>
-        <div class="chip active" data-val="medium">🌶🌶 Medium</div>
-        <div class="chip active" data-val="hard">🌶🌶🌶 Hard</div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <span class="filter-label">Time filter</span>
-      <div class="chips" id="time-chips">
-        <div class="chip quick" data-val="quick">⏱ Quick only (≤20 min)</div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <span class="filter-label">Extra</span>
-      <div class="chips" id="kids-chips">
-        <div class="chip" data-val="kids">🧒 Show kids' snacks &amp; drinks</div>
-      </div>
-    </div>
-
-    <button class="gen-btn" id="genBtn">Generate month schedule</button>
-    <p class="note" id="poolNote"></p>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
+    <button class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Snacks &amp; Drinks</button>
   </div>
 
-  <div class="schedule" id="scheduleOutput">
-    <div class="empty-state">Set your filters above and tap <b>Generate month schedule</b> to build your 4-week plan.</div>
+  <div id="scheduleView">
+    <div class="panel">
+      <h2>Build your month</h2>
+
+      <div class="filter-group">
+        <span class="filter-label">Food type</span>
+        <div class="chips" id="cat-chips">
+          <div class="chip active" data-val="veg">🌿 Veg</div>
+          <div class="chip active" data-val="non-veg">🍗 Non-veg</div>
+          <div class="chip active" data-val="south-indian">🥥 South Indian</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Effort level</span>
+        <div class="chips" id="diff-chips">
+          <div class="chip active" data-val="easy">🌶 Easy</div>
+          <div class="chip active" data-val="medium">🌶🌶 Medium</div>
+          <div class="chip active" data-val="hard">🌶🌶🌶 Hard</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Time filter</span>
+        <div class="chips" id="time-chips">
+          <div class="chip quick" data-val="quick">⏱ Quick only (≤20 min)</div>
+        </div>
+      </div>
+
+      <button class="gen-btn" id="genBtn">Generate month schedule</button>
+      <p class="note" id="poolNote"></p>
+    </div>
+
+    <div class="schedule" id="scheduleOutput">
+      <div class="empty-state">Set your filters above and tap <b>Generate month schedule</b> to build your 4-week plan.</div>
+    </div>
   </div>
 
-  <div id="kidsSection" style="display:none;"></div>
+  <div id="kidsView" style="display:none;"></div>
 
   <footer>BUSYWOMEN COOK SCHEDULE &middot; PLAN ONCE, COOK ALL MONTH<br>As an Amazon Associate, this app earns from qualifying purchases</footer>
 </div>
@@ -542,81 +572,82 @@
 // ---------- DISH DATABASE ----------
 const DISHES = [
   // BREAKFAST — veg
-  {name:"Poha", meal:"breakfast", category:"veg", difficulty:"easy", time:15},
-  {name:"Vegetable Upma", meal:"breakfast", category:"veg", difficulty:"easy", time:20},
-  {name:"Besan Chilla", meal:"breakfast", category:"veg", difficulty:"easy", time:15},
-  {name:"Stuffed Aloo Paratha", meal:"breakfast", category:"veg", difficulty:"medium", time:30},
-  {name:"Vegetable Daliya", meal:"breakfast", category:"veg", difficulty:"easy", time:20},
-  {name:"Moong Dal Chilla", meal:"breakfast", category:"veg", difficulty:"medium", time:25},
-  {name:"Vegetable Sandwich", meal:"breakfast", category:"veg", difficulty:"easy", time:10},
+  {name:"Poha", meal:"breakfast", category:"veg", difficulty:"easy", time:15, ingredients:["poha (flattened rice)","peanuts","mustard seeds","curry leaves"]},
+  {name:"Vegetable Upma", meal:"breakfast", category:"veg", difficulty:"easy", time:20, ingredients:["rava (semolina)","mixed vegetables","mustard seeds"]},
+  {name:"Besan Chilla", meal:"breakfast", category:"veg", difficulty:"easy", time:15, ingredients:["besan (gram flour)","onion","green chilli"]},
+  {name:"Stuffed Aloo Paratha", meal:"breakfast", category:"veg", difficulty:"medium", time:30, ingredients:["whole wheat atta","potatoes","ghee"]},
+  {name:"Vegetable Daliya", meal:"breakfast", category:"veg", difficulty:"easy", time:20, ingredients:["broken wheat daliya","mixed vegetables","cumin seeds"]},
+  {name:"Moong Dal Chilla", meal:"breakfast", category:"veg", difficulty:"medium", time:25, ingredients:["moong dal","ginger","green chilli"]},
+  {name:"Vegetable Sandwich", meal:"breakfast", category:"veg", difficulty:"easy", time:10, ingredients:["bread loaf","mixed vegetables","butter"]},
   // BREAKFAST — non-veg
-  {name:"Egg Bhurji", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
-  {name:"Omelette & Toast", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10},
-  {name:"Chicken Sausage Wrap", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
-  {name:"Egg Paratha", meal:"breakfast", category:"non-veg", difficulty:"medium", time:25},
-  {name:"Keema Paratha", meal:"breakfast", category:"non-veg", difficulty:"hard", time:40},
-  {name:"Boiled Egg Salad", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10},
-  {name:"Chicken Sandwich", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15},
+  {name:"Egg Bhurji", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["eggs","onion","tomato"]},
+  {name:"Omelette & Toast", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10, ingredients:["eggs","bread loaf","butter"]},
+  {name:"Chicken Sausage Wrap", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["chicken sausages","tortilla wrap","lettuce"]},
+  {name:"Egg Paratha", meal:"breakfast", category:"non-veg", difficulty:"medium", time:25, ingredients:["whole wheat atta","eggs","onion"]},
+  {name:"Keema Paratha", meal:"breakfast", category:"non-veg", difficulty:"hard", time:40, ingredients:["minced mutton keema","whole wheat atta","ginger garlic paste"]},
+  {name:"Boiled Egg Salad", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10, ingredients:["eggs","lettuce","black pepper"]},
+  {name:"Chicken Sandwich", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["chicken breast","bread loaf","mayonnaise"]},
   // BREAKFAST — south indian
-  {name:"Idli & Sambar", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
-  {name:"Plain Dosa", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
-  {name:"Masala Dosa", meal:"breakfast", category:"south-indian", difficulty:"hard", time:35},
-  {name:"Uttapam", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
-  {name:"Ven Pongal", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25},
-  {name:"Rava Idli", meal:"breakfast", category:"south-indian", difficulty:"easy", time:20},
-  {name:"Medu Vada", meal:"breakfast", category:"south-indian", difficulty:"hard", time:40},
+  {name:"Idli & Sambar", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["idli rice","urad dal","toor dal"]},
+  {name:"Plain Dosa", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa rice","urad dal","fenugreek seeds"]},
+  {name:"Masala Dosa", meal:"breakfast", category:"south-indian", difficulty:"hard", time:35, ingredients:["dosa batter mix","potatoes","mustard seeds"]},
+  {name:"Uttapam", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa batter mix","onion","tomato"]},
+  {name:"Ven Pongal", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["raw rice","moong dal","black pepper"]},
+  {name:"Rava Idli", meal:"breakfast", category:"south-indian", difficulty:"easy", time:20, ingredients:["rava (semolina)","curd","mustard seeds"]},
+  {name:"Medu Vada", meal:"breakfast", category:"south-indian", difficulty:"hard", time:40, ingredients:["urad dal","black pepper","curry leaves"]},
 
   // LUNCH — veg
-  {name:"Dal Tadka & Rice", meal:"lunch", category:"veg", difficulty:"easy", time:25},
-  {name:"Mixed Veg Curry & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35},
-  {name:"Rajma Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:40},
-  {name:"Chole Bhature", meal:"lunch", category:"veg", difficulty:"hard", time:50},
-  {name:"Paneer Butter Masala & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35},
-  {name:"Vegetable Pulao", meal:"lunch", category:"veg", difficulty:"medium", time:30},
-  {name:"Kadhi Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:30},
+  {name:"Dal Tadka & Rice", meal:"lunch", category:"veg", difficulty:"easy", time:25, ingredients:["toor dal","basmati rice","cumin seeds"]},
+  {name:"Mixed Veg Curry & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35, ingredients:["mixed vegetables","whole wheat atta","garam masala"]},
+  {name:"Rajma Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:40, ingredients:["rajma (kidney beans)","basmati rice","onion"]},
+  {name:"Chole Bhature", meal:"lunch", category:"veg", difficulty:"hard", time:50, ingredients:["kabuli chana (chickpeas)","maida flour","chole masala"]},
+  {name:"Paneer Butter Masala & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35, ingredients:["paneer","tomato puree","fresh cream"]},
+  {name:"Vegetable Pulao", meal:"lunch", category:"veg", difficulty:"medium", time:30, ingredients:["basmati rice","mixed vegetables","whole garam masala"]},
+  {name:"Kadhi Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:30, ingredients:["besan (gram flour)","curd","basmati rice"]},
   // LUNCH — non-veg
-  {name:"Chicken Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:40},
-  {name:"Egg Curry & Roti", meal:"lunch", category:"non-veg", difficulty:"easy", time:25},
-  {name:"Fish Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35},
-  {name:"Mutton Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"hard", time:60},
-  {name:"Chicken Biryani", meal:"lunch", category:"non-veg", difficulty:"hard", time:55},
-  {name:"Butter Chicken & Naan", meal:"lunch", category:"non-veg", difficulty:"hard", time:50},
-  {name:"Prawn Masala & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35},
+  {name:"Chicken Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:40, ingredients:["chicken curry cut","onion","basmati rice"]},
+  {name:"Egg Curry & Roti", meal:"lunch", category:"non-veg", difficulty:"easy", time:25, ingredients:["eggs","onion tomato masala","whole wheat atta"]},
+  {name:"Fish Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35, ingredients:["fish fillet","coconut","basmati rice"]},
+  {name:"Mutton Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"hard", time:60, ingredients:["mutton curry cut","onion","basmati rice"]},
+  {name:"Chicken Biryani", meal:"lunch", category:"non-veg", difficulty:"hard", time:55, ingredients:["basmati rice","chicken curry cut","biryani masala"]},
+  {name:"Butter Chicken & Naan", meal:"lunch", category:"non-veg", difficulty:"hard", time:50, ingredients:["chicken","butter","naan flour mix"]},
+  {name:"Prawn Masala & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35, ingredients:["prawns","coconut","basmati rice"]},
   // LUNCH — south indian
-  {name:"Sambar Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:25},
-  {name:"Rasam Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20},
-  {name:"Curd Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:10},
-  {name:"Bisi Bele Bath", meal:"lunch", category:"south-indian", difficulty:"medium", time:35},
-  {name:"Lemon Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20},
-  {name:"Vegetable Kootu & Rice", meal:"lunch", category:"south-indian", difficulty:"medium", time:30},
-  {name:"Chettinad Chicken & Rice", meal:"lunch", category:"south-indian", difficulty:"hard", time:50},
+  {name:"Sambar Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:25, ingredients:["toor dal","sambar powder","raw rice"]},
+  {name:"Rasam Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20, ingredients:["rasam powder","tamarind","raw rice"]},
+  {name:"Curd Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:10, ingredients:["raw rice","curd","mustard seeds"]},
+  {name:"Bisi Bele Bath", meal:"lunch", category:"south-indian", difficulty:"medium", time:35, ingredients:["raw rice","toor dal","bisi bele bath powder"]},
+  {name:"Lemon Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20, ingredients:["raw rice","lemon","peanuts"]},
+  {name:"Vegetable Kootu & Rice", meal:"lunch", category:"south-indian", difficulty:"medium", time:30, ingredients:["mixed vegetables","toor dal","raw rice"]},
+  {name:"Chettinad Chicken & Rice", meal:"lunch", category:"south-indian", difficulty:"hard", time:50, ingredients:["chicken curry cut","chettinad masala","basmati rice"]},
 
   // DINNER — veg
-  {name:"Vegetable Soup & Bread", meal:"dinner", category:"veg", difficulty:"easy", time:15},
-  {name:"Palak Paneer & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30},
-  {name:"Vegetable Khichdi", meal:"dinner", category:"veg", difficulty:"easy", time:25},
-  {name:"Baingan Bharta & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30},
-  {name:"Stuffed Capsicum", meal:"dinner", category:"veg", difficulty:"hard", time:40},
-  {name:"Mixed Dal & Roti", meal:"dinner", category:"veg", difficulty:"easy", time:25},
-  {name:"Vegetable Fried Rice", meal:"dinner", category:"veg", difficulty:"medium", time:25},
+  {name:"Vegetable Soup & Bread", meal:"dinner", category:"veg", difficulty:"easy", time:15, ingredients:["mixed vegetables","bread loaf","vegetable stock cube"]},
+  {name:"Palak Paneer & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30, ingredients:["spinach","paneer","whole wheat atta"]},
+  {name:"Vegetable Khichdi", meal:"dinner", category:"veg", difficulty:"easy", time:25, ingredients:["moong dal","basmati rice","mixed vegetables"]},
+  {name:"Baingan Bharta & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30, ingredients:["brinjal (eggplant)","onion","whole wheat atta"]},
+  {name:"Stuffed Capsicum", meal:"dinner", category:"veg", difficulty:"hard", time:40, ingredients:["capsicum","potatoes","spice masala"]},
+  {name:"Mixed Dal & Roti", meal:"dinner", category:"veg", difficulty:"easy", time:25, ingredients:["mixed dals","whole wheat atta","ghee"]},
+  {name:"Vegetable Fried Rice", meal:"dinner", category:"veg", difficulty:"medium", time:25, ingredients:["basmati rice","mixed vegetables","soy sauce"]},
   // DINNER — non-veg
-  {name:"Grilled Chicken & Salad", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
-  {name:"Egg Fried Rice", meal:"dinner", category:"non-veg", difficulty:"easy", time:20},
-  {name:"Chicken Stew & Appam", meal:"dinner", category:"non-veg", difficulty:"hard", time:45},
-  {name:"Fish Fry & Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
-  {name:"Chicken Soup", meal:"dinner", category:"non-veg", difficulty:"easy", time:20},
-  {name:"Mutton Stew", meal:"dinner", category:"non-veg", difficulty:"hard", time:50},
-  {name:"Prawn Fried Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30},
+  {name:"Grilled Chicken & Salad", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["chicken breast","salad greens","olive oil"]},
+  {name:"Egg Fried Rice", meal:"dinner", category:"non-veg", difficulty:"easy", time:20, ingredients:["eggs","basmati rice","soy sauce"]},
+  {name:"Chicken Stew & Appam", meal:"dinner", category:"non-veg", difficulty:"hard", time:45, ingredients:["chicken","coconut milk","rice flour (appam)"]},
+  {name:"Fish Fry & Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["fish fillet","rice flour coating","basmati rice"]},
+  {name:"Chicken Soup", meal:"dinner", category:"non-veg", difficulty:"easy", time:20, ingredients:["chicken stock","chicken pieces","black pepper"]},
+  {name:"Mutton Stew", meal:"dinner", category:"non-veg", difficulty:"hard", time:50, ingredients:["mutton curry cut","coconut milk","potatoes"]},
+  {name:"Prawn Fried Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["prawns","basmati rice","soy sauce"]},
   // DINNER — south indian
-  {name:"Dosa & Coconut Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:25},
-  {name:"Idiyappam & Veg Curry", meal:"dinner", category:"south-indian", difficulty:"hard", time:40},
-  {name:"Adai & Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:30},
-  {name:"Vegetable Stew & Appam", meal:"dinner", category:"south-indian", difficulty:"medium", time:35},
-  {name:"Rava Upma", meal:"dinner", category:"south-indian", difficulty:"easy", time:20},
-  {name:"Curd Vada", meal:"dinner", category:"south-indian", difficulty:"hard", time:40},
-  {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", difficulty:"easy", time:20},
+  {name:"Dosa & Coconut Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa batter mix","coconut","green chilli"]},
+  {name:"Idiyappam & Veg Curry", meal:"dinner", category:"south-indian", difficulty:"hard", time:40, ingredients:["rice flour (idiyappam)","mixed vegetables","coconut milk"]},
+  {name:"Adai & Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:30, ingredients:["mixed lentils (adai mix)","raw rice","coconut"]},
+  {name:"Vegetable Stew & Appam", meal:"dinner", category:"south-indian", difficulty:"medium", time:35, ingredients:["mixed vegetables","coconut milk","rice flour (appam)"]},
+  {name:"Rava Upma", meal:"dinner", category:"south-indian", difficulty:"easy", time:20, ingredients:["rava (semolina)","mustard seeds","curry leaves"]},
+  {name:"Curd Vada", meal:"dinner", category:"south-indian", difficulty:"hard", time:40, ingredients:["urad dal","curd","mustard seeds"]},
+  {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", difficulty:"easy", time:20, ingredients:["dosa batter mix","mixed vegetables","onion"]},
 
   // ---- READY-MADE / INSTANT (store-bought, quick) ----
+  // These are already store-bought — no separate "ingredients" link needed.
   // Breakfast
   {name:"Instant Poha Mix", meal:"breakfast", category:"veg", difficulty:"easy", time:5, readymade:true},
   {name:"Instant Oats Cup", meal:"breakfast", category:"veg", difficulty:"easy", time:5, readymade:true},
@@ -674,11 +705,14 @@ const CONFIG = {
 };
 
 function shopLinkReadymade(dishName){
-  const q = encodeURIComponent("ready to eat " + dishName);
+  const q = encodeURIComponent("ready to eat " + dishName + " pack");
   return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
 }
-function shopLinkIngredients(dishName){
-  const q = encodeURIComponent(dishName + " ingredients");
+function shopLinkIngredients(dish){
+  // Uses the dish's actual ingredient list (not the dish name) so results
+  // are raw grocery items, not ready-to-eat versions of the dish.
+  const terms = (dish.ingredients && dish.ingredients.length) ? dish.ingredients.join(", ") : dish.name;
+  const q = encodeURIComponent(terms + " grocery");
   return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
 }
 function shopLinkProduct(productName){
@@ -694,7 +728,6 @@ let state = {
   categories: new Set(["veg","non-veg","south-indian"]),
   difficulties: new Set(["easy","medium","hard"]),
   quickOnly: false,
-  showKids: false,
 };
 
 // ---------- LIVE CLOCK ----------
@@ -750,14 +783,29 @@ wireChips('cat-chips', state.categories, false);
 wireChips('diff-chips', state.difficulties, false);
 wireChips('time-chips', null, true);
 
-document.querySelectorAll('#kids-chips .chip').forEach(chip=>{
-  chip.addEventListener('click', ()=>{
-    state.showKids = !state.showKids;
-    chip.classList.toggle('active', state.showKids);
-    renderKidsSection();
-    saveState(lastWeeks);
-  });
-});
+// ---------- TAB BAR ----------
+function showTab(tab){
+  const scheduleView = document.getElementById('scheduleView');
+  const kidsView = document.getElementById('kidsView');
+  const tabSchedule = document.getElementById('tabSchedule');
+  const tabKids = document.getElementById('tabKids');
+  if(tab==='kids'){
+    scheduleView.style.display = 'none';
+    kidsView.style.display = 'block';
+    tabSchedule.classList.remove('active');
+    tabKids.classList.add('active');
+  } else {
+    scheduleView.style.display = 'block';
+    kidsView.style.display = 'none';
+    tabSchedule.classList.add('active');
+    tabKids.classList.remove('active');
+  }
+}
+document.getElementById('tabSchedule').addEventListener('click', ()=>showTab('schedule'));
+document.getElementById('tabKids').addEventListener('click', ()=>showTab('kids'));
+// Kids' Snacks & Drinks is a fixed, always-available list — render it once
+// up front so it's ready the moment someone taps the tab.
+renderKidsSection();
 
 // ---------- SCHEDULING ----------
 function shuffle(arr){
@@ -853,6 +901,17 @@ function generateSchedule(){
 function dishRowHTML(label, dish, mealKey, currentMeal){
   if(!dish) return '';
   const isNow = mealKey && mealKey===currentMeal;
+  const ingredientsPreview = (!dish.readymade && dish.ingredients && dish.ingredients.length)
+    ? `<p class="ingredients-list">Needs: ${dish.ingredients.join(", ")}</p>`
+    : '';
+  const buyRow = dish.readymade
+    ? `<div class="buy-row">
+         <a class="buy-btn readymade" href="${shopLinkProduct(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy ${dish.name} (Amazon affiliate link)">📦 Buy ${dish.name}</a>
+       </div>`
+    : `<div class="buy-row">
+         <a class="buy-btn readymade" href="${shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy a ready-made version of ${dish.name} (Amazon affiliate link)">📦 Ready-made</a>
+         <a class="buy-btn ingredients" href="${shopLinkIngredients(dish)}" target="_blank" rel="noopener sponsored" title="Buy ingredients for ${dish.name} (Amazon affiliate link)">🛒 Ingredients</a>
+       </div>`;
   return `
     <div class="meal-row${isNow ? ' current':''}">
       <div class="meal-top">
@@ -865,12 +924,10 @@ function dishRowHTML(label, dish, mealKey, currentMeal){
             <span class="peppers">${PEPPER[dish.difficulty]}</span>
             <span class="time-badge">⏱ ${dish.time} min</span>
           </div>
+          ${ingredientsPreview}
         </div>
       </div>
-      <div class="buy-row">
-        <a class="buy-btn readymade" href="${shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy ready-made ${dish.name} (Amazon affiliate link)">📦 Ready-made</a>
-        <a class="buy-btn ingredients" href="${shopLinkIngredients(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy ingredients for ${dish.name} (Amazon affiliate link)">🛒 Ingredients</a>
-      </div>
+      ${buyRow}
     </div>`;
 }
 
@@ -916,13 +973,7 @@ function renderSchedule(weeks){
 }
 
 function renderKidsSection(){
-  const wrap = document.getElementById('kidsSection');
-  if(!state.showKids){
-    wrap.style.display = 'none';
-    wrap.innerHTML = '';
-    return;
-  }
-  wrap.style.display = 'block';
+  const wrap = document.getElementById('kidsView');
   const cards = KID_ITEMS.map(item => `
     <div class="kid-card">
       <span class="kid-emoji">${item.emoji}</span>
@@ -945,8 +996,7 @@ async function saveState(weeks){
       weeks,
       categories: [...state.categories],
       difficulties: [...state.difficulties],
-      quickOnly: state.quickOnly,
-      showKids: state.showKids
+      quickOnly: state.quickOnly
     }));
   }catch(e){ console.error('Could not save schedule', e); }
 }
@@ -960,9 +1010,7 @@ async function loadState(){
         state.categories = new Set(data.categories);
         state.difficulties = new Set(data.difficulties);
         state.quickOnly = !!data.quickOnly;
-        state.showKids = !!data.showKids;
         syncChipsToState();
-        renderKidsSection();
       }
       if(data.weeks){
         lastWeeks = data.weeks;
@@ -977,7 +1025,6 @@ function syncChipsToState(){
   document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.toggle('active', state.categories.has(c.dataset.val)));
   document.querySelectorAll('#diff-chips .chip').forEach(c=>c.classList.toggle('active', state.difficulties.has(c.dataset.val)));
   document.querySelectorAll('#time-chips .chip').forEach(c=>c.classList.toggle('active', state.quickOnly));
-  document.querySelectorAll('#kids-chips .chip').forEach(c=>c.classList.toggle('active', state.showKids));
 }
 
 let lastWeeks = null;
