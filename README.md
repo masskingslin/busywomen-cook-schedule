@@ -24,9 +24,12 @@ Just double-click `index.html`, or open it in any browser.
    - Save — your app will be live at `https://<your-username>.github.io/busywomen-cook-schedule/` within a minute or two.
 
 ## How it works
-- All 63 dishes (21 breakfast, 21 lunch, 21 dinner — split across Veg, Non-veg, and South Indian) live in the `DISHES` array inside `index.html`.
+- All dishes (86 total: 63 home-cooked + 23 ready-made/instant) live in the `DISHES` array inside `index.html`, split across Veg, Non-veg, and South Indian, for breakfast, lunch, and dinner.
+- Ready-made/instant items (frozen parathas, MTR-style mixes, ready-to-eat curry packs, etc.) are tagged `readymade:true` and carry a **📦 Ready-made** badge — they're all easy difficulty and 5–10 minutes, so they surface heavily under the "Quick only" filter.
+- Every dish shows **two** Amazon buy buttons, in this order: **📦 Ready-made** (searches for a store-bought version of that dish) first, then **🛒 Ingredients** (searches for what you'd need to cook it) second — ready-made gets first preference as requested.
+- A separate **Kids' Snacks & Drinks** panel (toggle it on with the "🧒 Show kids' snacks & drinks" chip) lists 16 curated healthy snack/drink picks with their own Amazon buy buttons — this list is independent of the weekly meal schedule.
 - Tap the filter chips, then **Generate month schedule** to build 4 weeks. Each week draws 7 distinct dishes per meal, so nothing repeats within a week, and the app also tries to avoid repeating last week's picks.
-- Your last generated plan and filter choices are saved automatically and reload next time you open the app.
+- Your last generated plan and filter choices (including whether the kids' panel is open) are saved automatically and reload next time you open the app.
 
 ## Turn on monetization (free to set up)
 
