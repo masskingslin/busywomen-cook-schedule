@@ -86,6 +86,112 @@
   .legend span.pep{color:var(--chili);}
   .legend b{color:var(--cream);font-weight:600;}
 
+  /* LIVE CLOCK STRIP */
+  .live-strip{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--teal-line);
+    border-radius:12px;
+    padding:11px 14px;
+    margin-top:14px;
+  }
+  .live-strip .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--chili);
+    box-shadow:0 0 0 0 rgba(193,68,45,0.6);
+    animation:pulse 1.6s infinite;
+    flex-shrink:0;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(193,68,45,0.55);}
+    70%{box-shadow:0 0 0 7px rgba(193,68,45,0);}
+    100%{box-shadow:0 0 0 0 rgba(193,68,45,0);}
+  }
+  .live-strip .live-text{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--turmeric);
+    flex-shrink:0;
+  }
+  .live-strip .live-date{
+    flex:1;
+    text-align:right;
+    font-family:'Work Sans', sans-serif;
+    font-size:13px;
+    color:var(--cream);
+  }
+  .live-strip .live-time{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:14px;
+    color:var(--cream);
+    white-space:nowrap;
+  }
+
+  /* TODAY CARD */
+  .today-card{
+    background:var(--teal-mid);
+    border:1.5px solid var(--turmeric);
+    border-radius:14px;
+    margin:0 14px 4px;
+    overflow:hidden;
+    box-shadow:0 10px 24px rgba(0,0,0,0.28);
+  }
+  .today-card .today-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px 8px;
+  }
+  .today-card .today-head .eyebrow{margin:0;}
+  .today-card .today-head .today-date{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--cream);
+  }
+  .today-card .meal-row{border-bottom-color:rgba(251,243,228,0.14);}
+  .today-card .meal-icon{color:#B9C9C6;}
+  .today-card .meal-name{color:var(--cream);}
+  .today-card .time-badge{color:#B9C9C6;}
+  .today-card .meal-row.current{
+    background:rgba(231,167,44,0.14);
+    position:relative;
+  }
+  .today-card .meal-row.current::before{
+    content:"NOW";
+    position:absolute;
+    right:16px;
+    top:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    letter-spacing:.08em;
+    color:var(--turmeric);
+    font-weight:700;
+  }
+
+  .day-card.is-today{
+    border:1.5px solid var(--turmeric);
+    box-shadow:0 8px 20px rgba(231,167,44,0.22);
+  }
+  .day-card.is-today .day-title{
+    color:var(--turmeric);
+  }
+  .day-card.is-today .day-title::after{
+    content:" · today";
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--chili);
+    font-weight:600;
+  }
+
   /* FILTER PANEL */
   .panel{
     background:var(--cream);
@@ -285,7 +391,15 @@
       <span><span class="pep">🌶🌶</span> <b>2</b> = medium</span>
       <span><span class="pep">🌶🌶🌶</span> <b>3</b> = hard</span>
     </div>
+    <div class="live-strip">
+      <span class="live-dot"></span>
+      <span class="live-text">Live</span>
+      <span class="live-date" id="liveDate"></span>
+      <span class="live-time" id="liveTime"></span>
+    </div>
   </div>
+
+  <div id="todaySlot"></div>
 
   <div class="panel">
     <h2>Build your month</h2>
@@ -415,6 +529,34 @@ let state = {
   quickOnly: false,
 };
 
+// ---------- LIVE CLOCK ----------
+function tickClock(){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  const timeStr = now.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const dEl = document.getElementById('liveDate');
+  const tEl = document.getElementById('liveTime');
+  if(dEl) dEl.textContent = dateStr;
+  if(tEl) tEl.textContent = timeStr;
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+// ---------- TODAY MAPPING ----------
+// Maps "right now" onto the generated 4-week template: which week-of-month
+// (clamped 1-4) and which weekday row (Mon..Sun) today corresponds to.
+function getTodayInfo(){
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const weekIndex = Math.min(3, Math.floor((dayOfMonth - 1) / 7)); // 0-3
+  const dayIndex = (now.getDay() + 6) % 7; // Monday=0 ... Sunday=6
+  const hour = now.getHours();
+  let currentMeal = 'breakfast';
+  if(hour >= 11 && hour < 16) currentMeal = 'lunch';
+  else if(hour >= 16 || hour < 5) currentMeal = 'dinner';
+  return {weekIndex, dayIndex, currentMeal, now};
+}
+
 // ---------- FILTER CHIP WIRING ----------
 function wireChips(containerId, targetSet, singleToggleVal){
   document.querySelectorAll('#'+containerId+' .chip').forEach(chip=>{
@@ -531,10 +673,11 @@ function generateSchedule(){
   return weeks;
 }
 
-function dishRowHTML(label, dish){
+function dishRowHTML(label, dish, mealKey, currentMeal){
   if(!dish) return '';
+  const isNow = mealKey && mealKey===currentMeal;
   return `
-    <div class="meal-row">
+    <div class="meal-row${isNow ? ' current':''}">
       <div class="meal-icon">${label}</div>
       <div class="meal-main">
         <p class="meal-name">${dish.name}</p>
@@ -547,14 +690,36 @@ function dishRowHTML(label, dish){
     </div>`;
 }
 
+function renderTodayCard(weeks){
+  const slot = document.getElementById('todaySlot');
+  if(!weeks){ slot.innerHTML = ''; return; }
+  const info = getTodayInfo();
+  const week = weeks[info.weekIndex];
+  const today = week ? week[info.dayIndex] : null;
+  if(!today){ slot.innerHTML = ''; return; }
+  const dateStr = info.now.toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
+  slot.innerHTML = `
+    <div class="today-card">
+      <div class="today-head">
+        <p class="eyebrow">Today &middot; ${today.day}</p>
+        <span class="today-date">${dateStr}</span>
+      </div>
+      ${dishRowHTML('Breakfast', today.breakfast, 'breakfast', info.currentMeal)}
+      ${dishRowHTML('Lunch', today.lunch, 'lunch', info.currentMeal)}
+      ${dishRowHTML('Dinner', today.dinner, 'dinner', info.currentMeal)}
+    </div>`;
+}
+
 function renderSchedule(weeks){
   const out = document.getElementById('scheduleOutput');
   if(!weeks){ return; }
+  const info = getTodayInfo();
   let html = '';
   weeks.forEach((days, wi)=>{
     html += `<div class="week-head"><span class="wk-num">Week ${wi+1}</span><span class="wk-label">7 days &middot; no repeats</span><hr></div>`;
-    days.forEach(d=>{
-      html += `<div class="day-card">
+    days.forEach((d, di)=>{
+      const isToday = wi===info.weekIndex && di===info.dayIndex;
+      html += `<div class="day-card${isToday ? ' is-today':''}">
         <div class="day-title">${d.day}</div>
         ${dishRowHTML('Breakfast', d.breakfast)}
         ${dishRowHTML('Lunch', d.lunch)}
@@ -563,6 +728,7 @@ function renderSchedule(weeks){
     });
   });
   out.innerHTML = html;
+  renderTodayCard(weeks);
 }
 
 async function saveState(weeks){
@@ -588,6 +754,7 @@ async function loadState(){
         syncChipsToState();
       }
       if(data.weeks){
+        lastWeeks = data.weeks;
         renderSchedule(data.weeks);
         document.getElementById('poolNote').textContent = "Showing your last generated plan.";
       }
@@ -601,13 +768,23 @@ function syncChipsToState(){
   document.querySelectorAll('#time-chips .chip').forEach(c=>c.classList.toggle('active', state.quickOnly));
 }
 
+let lastWeeks = null;
+
 document.getElementById('genBtn').addEventListener('click', ()=>{
   const weeks = generateSchedule();
   if(weeks){
+    lastWeeks = weeks;
     renderSchedule(weeks);
     saveState(weeks);
   }
 });
+
+// Keep the "NOW" meal badge and today-highlight accurate as time passes
+setInterval(()=>{
+  if(lastWeeks){
+    renderTodayCard(lastWeeks);
+  }
+}, 60000);
 
 loadState();
 </script>
