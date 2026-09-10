@@ -1,57 +1,63 @@
 # Busywomen Cook Schedule
 
-A month-long meal planner for busy women — breakfast, lunch, and dinner, with no dish repeated within the same week. Filter by Veg / Non-veg / South Indian and by effort level (easy / medium / hard, shown as chili icons 🌶), plus a "quick only" filter for meals under 20 minutes.
+A month-long meal planner for busy women — breakfast, lunch, and dinner, with no dish repeated within the same week. Filter by Veg / Non-veg / South Indian and max cooking effort, scale the plan to your family size, then export a shareable grocery list, a Sunday batch-prep guide, a WhatsApp-ready summary, and a real calendar (.ics) file.
 
-It's a single static HTML file — no build step, no server, no dependencies to install.
+Plain HTML/CSS/JS — no build step, no framework, no server required.
+
+## Project structure
+```
+index.html        the app shell
+css/styles.css     all styling
+js/data.js         the dish database + Amazon affiliate config
+js/app.js          all app logic (scheduling, grocery list, prep guide, share, calendar export)
+```
 
 ## Run it locally
-Just double-click `index.html`, or open it in any browser.
+Open `index.html` in any browser, or serve the folder with any static file server.
 
-## Put it on GitHub
-1. Create a new repository on GitHub named `busywomen-cook-schedule` (or any name you like).
-2. Add this `index.html` (and this `README.md`) to the repo — either drag-and-drop them in the GitHub web UI ("Add file" → "Upload files"), or from your terminal:
-   ```bash
-   git init
-   git add index.html README.md
-   git commit -m "Add Busywomen Cook Schedule app"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/busywomen-cook-schedule.git
-   git push -u origin main
-   ```
-3. Turn on GitHub Pages so it's live on the web:
-   - Go to the repo's **Settings → Pages**
-   - Under "Source," choose the `main` branch and `/ (root)` folder
-   - Save — your app will be live at `https://<your-username>.github.io/busywomen-cook-schedule/` within a minute or two.
+## Features
+- **Filters** — Food type (All / Veg / Non-veg / South Indian), max effort (🌶 Easy / 🌶🌶 Up to Medium / 🌶🌶🌶 Any), family size (1 / 2 / 4 people), and a "Quick only" (≤20 min) toggle. "↺ Reset to defaults" restores everything, including meal times.
+- **Generate Month Schedule** — builds 4 weeks of breakfast/lunch/dinner with zero repeats within any single week, pulling from 86 dishes (63 home-cooked with real ingredient lists, 23 ready-made/instant items).
+- **Two buy buttons per home-cooked dish** — 📦 Ready-made (searches Amazon for a store-bought version) and 🛒 Ingredients (searches using the dish's actual ingredient list, not a generic name search). Ready-made/instant dishes show a single 📦 buy button since there's nothing to source separately.
+- **🛒 Smart Grocery Aggregator** — sums every ingredient across the full 4-week plan, scaled to your selected family size, with a per-item Amazon buy link and a "Copy to Clipboard" option.
+- **⚡ Sunday Prep Guide** — looks at the current week's dishes, finds ingredients that repeat across multiple meals, and turns them into a batch-prep checklist (plus smart tips like "batch-cook rice" or "marinate proteins ahead" when relevant).
+- **💬 Share Plan** — opens WhatsApp with today's breakfast/lunch/dinner pre-filled.
+- **📅 Export .ics** — downloads a calendar file with an event for every meal over the next 28 days, using your chosen meal times and reminder offset (15 min / 30 min / 1 hr / 2 hr before, or none). Import it into Google Calendar, Outlook, or Apple Calendar.
 
-## How it works
-- All dishes (86 total: 63 home-cooked + 23 ready-made/instant) live in the `DISHES` array inside `index.html`, split across Veg, Non-veg, and South Indian, for breakfast, lunch, and dinner.
-- Every home-cooked dish carries its own real `ingredients` list (e.g. Poha → poha, peanuts, mustard seeds, curry leaves). The **🛒 Ingredients** button searches Amazon using those actual ingredient names, not the dish name — so it returns raw grocery items instead of ready-made packs.
-- Home-cooked dishes show two buttons: **📦 Ready-made** (searches for a store-bought version of that dish) and **🛒 Ingredients** (searches the dish's real ingredient list), in that order.
-- Ready-made/instant items (frozen parathas, MTR-style mixes, ready-to-eat curry packs, etc.) are tagged `readymade:true`, carry a **📦 Ready-made** badge, and show a single **📦 Buy** button since there's no separate "ingredients" version — they're already store-bought.
-- **Kids' Snacks & Drinks** lives on its own tab, completely separate from the meal schedule — tap "🧒 Kids' Snacks & Drinks" at the top to switch to a fixed list of 16 curated healthy picks (makhana, ragi cookies, flavoured milk, coconut water, etc.), each with its own Amazon buy button.
-- Tap the filter chips, then **Generate month schedule** to build 4 weeks. Each week draws 7 distinct dishes per meal, so nothing repeats within a week, and the app also tries to avoid repeating last week's picks.
-- Your last generated plan and filter choices are saved automatically and reload next time you open the app.
-
-## Turn on monetization (free to set up)
-
-Open `index.html`, find the `CONFIG` object near the top of the `<script>` section:
-
+## Amazon affiliate setup
+Open `js/data.js` and edit the `CONFIG` object:
 ```js
 const CONFIG = {
   amazonTag: "kingcloud-21",
   amazonDomain: "amazon.in"
 };
 ```
-
-**Affiliate ingredient links (🛒 icon on every meal)** — already set to tag `kingcloud-21`.
-- This only earns if `kingcloud-21` is a tag from **your own** Amazon Associates account. If it isn't yours, swap it out — using someone else's tag sends them the commission, not you.
-- Double check `amazonDomain` matches the storefront your tag is registered on (`amazon.in`, `amazon.com`, etc. — Associates tags are region-specific and won't earn on the wrong domain).
-- Every 🛒 tap opens an Amazon search for that dish's ingredients with your tag attached — you earn a commission on anything purchased in that session.
-- Amazon requires 3 qualifying sales within 180 days of signup or the account gets closed, so it's worth driving some traffic soon after you sign up.
-- Affiliate disclosure is already built into the header and footer, as required by the Amazon Associates program.
+- `amazonTag` only earns for you if it's from your own Amazon Associates account.
+- `amazonDomain` must match the storefront your tag is registered on (`amazon.in`, `amazon.com`, etc.).
+- The required Amazon Associates disclosure is already in the footer.
 
 ## Customize the menu
-Open `index.html`, find the `DISHES` array near the top of the `<script>` section, and add, remove, or edit entries. Each dish needs:
+Add, remove, or edit dishes in `js/data.js`. Each home-cooked dish looks like:
 ```js
-{name:"Dish Name", meal:"breakfast|lunch|dinner", category:"veg|non-veg|south-indian", difficulty:"easy|medium|hard", time: 20}
+{
+  name: "Poha",
+  meal: "breakfast",              // breakfast | lunch | dinner
+  category: "veg",                // veg | non-veg | south-indian
+  effort: 1,                      // 1 = easy, 2 = moderate, 3 = weekend style
+  time: 15,                       // minutes
+  ingredients: [
+    { name: "Poha (flattened rice)", qty: 1.5, unit: "cup" },
+    { name: "Peanuts", qty: 2, unit: "tbsp" },
+    { name: "Curry leaves", qty: 8, unit: "leaves" }
+  ]
+}
 ```
+Ingredient quantities are written for a 2-person base serving — the grocery aggregator scales them automatically for the 1/2/4-person filter. Ready-made dishes just need `readymade: true` and a single ingredient entry naming the product itself.
+
+## Deploy to GitHub Pages
+1. Push this folder's contents to a GitHub repository.
+2. Go to **Settings → Pages**, set the source to the `main` branch and `/ (root)` folder.
+3. Your app goes live at `https://<your-username>.github.io/<repo-name>/`.
+
+## Note on this update
+This version replaces the earlier single-file app with a modular project and a different feature set (grocery aggregator, Sunday prep guide, WhatsApp share, calendar export). The earlier live-clock/"today" highlight and the separate Kids' Snacks & Drinks tab are not part of this layout — let me know if you'd like either added back in.

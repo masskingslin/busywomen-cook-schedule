@@ -1,1051 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Busywomen Cook Schedule</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --teal-deep:#123B3A;
-    --teal-mid:#1B5450;
-    --teal-line:#2B6864;
-    --cream:#FBF3E4;
-    --cream-dim:#F3E7CE;
-    --turmeric:#E7A72C;
-    --chili:#C1442D;
-    --leaf:#5B8C5A;
-    --ink:#1B1B16;
-    --ink-soft:#5A5A50;
-    --white:#FFFDF8;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--teal-deep);
-    color:var(--ink);
-    font-family:'Work Sans', sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:640px;margin:0 auto;padding-bottom:60px;}
-
-  /* HERO */
-  .hero{
-    background:
-      radial-gradient(circle at 15% 20%, rgba(231,167,44,0.18), transparent 45%),
-      radial-gradient(circle at 85% 0%, rgba(193,68,45,0.16), transparent 40%),
-      var(--teal-deep);
-    color:var(--cream);
-    padding:34px 22px 26px;
-    border-bottom:1px solid var(--teal-line);
-    position:relative;
-    overflow:hidden;
-  }
-  .eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--turmeric);
-    margin:0 0 10px;
-  }
-  h1.title{
-    font-family:'Fraunces', serif;
-    font-weight:700;
-    font-size:34px;
-    line-height:1.05;
-    margin:0 0 10px;
-    color:var(--cream);
-  }
-  h1.title em{
-    color:var(--turmeric);
-    font-style:italic;
-  }
-  .sub{
-    font-size:14.5px;
-    line-height:1.5;
-    color:#D9D3C1;
-    margin:0 0 22px;
-    max-width:46ch;
-  }
-
-  /* SPICE LEGEND (signature element) */
-  .legend{
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-    background:rgba(255,255,255,0.05);
-    border:1px solid var(--teal-line);
-    border-radius:12px;
-    padding:12px 14px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px;
-    color:#D9D3C1;
-  }
-  .legend span.pep{color:var(--chili);}
-  .legend b{color:var(--cream);font-weight:600;}
-
-  /* LIVE CLOCK STRIP */
-  .live-strip{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid var(--teal-line);
-    border-radius:12px;
-    padding:11px 14px;
-    margin-top:14px;
-  }
-  .live-strip .live-dot{
-    width:7px;height:7px;border-radius:50%;
-    background:var(--chili);
-    box-shadow:0 0 0 0 rgba(193,68,45,0.6);
-    animation:pulse 1.6s infinite;
-    flex-shrink:0;
-  }
-  @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(193,68,45,0.55);}
-    70%{box-shadow:0 0 0 7px rgba(193,68,45,0);}
-    100%{box-shadow:0 0 0 0 rgba(193,68,45,0);}
-  }
-  .live-strip .live-text{
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--turmeric);
-    flex-shrink:0;
-  }
-  .live-strip .live-date{
-    flex:1;
-    text-align:right;
-    font-family:'Work Sans', sans-serif;
-    font-size:13px;
-    color:var(--cream);
-  }
-  .live-strip .live-time{
-    font-family:'JetBrains Mono', monospace;
-    font-weight:600;
-    font-size:14px;
-    color:var(--cream);
-    white-space:nowrap;
-  }
-
-  /* TAB BAR */
-  .tab-bar{
-    display:flex;
-    gap:8px;
-    padding:16px 14px 0;
-  }
-  .tab-btn{
-    flex:1;
-    background:rgba(255,255,255,0.05);
-    border:1px solid var(--teal-line);
-    color:#D9D3C1;
-    font-family:'Work Sans', sans-serif;
-    font-weight:600;
-    font-size:12.5px;
-    padding:11px 8px;
-    border-radius:10px;
-    cursor:pointer;
-  }
-  .tab-btn.active{
-    background:var(--turmeric);
-    border-color:var(--turmeric);
-    color:var(--teal-deep);
-  }
-
-  /* TODAY CARD */
-  .today-card{
-    background:var(--teal-mid);
-    border:1.5px solid var(--turmeric);
-    border-radius:14px;
-    margin:0 14px 4px;
-    overflow:hidden;
-    box-shadow:0 10px 24px rgba(0,0,0,0.28);
-  }
-  .today-card .today-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:12px 16px 8px;
-  }
-  .today-card .today-head .eyebrow{margin:0;}
-  .today-card .today-head .today-date{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:14px;
-    color:var(--cream);
-  }
-  .today-card .meal-row{border-bottom-color:rgba(251,243,228,0.14);}
-  .today-card .meal-icon{color:#B9C9C6;}
-  .today-card .meal-name{color:var(--cream);}
-  .today-card .time-badge{color:#B9C9C6;}
-  .today-card .ingredients-list{color:#9FB3B0;}
-  .today-card .meal-row.current{
-    background:rgba(231,167,44,0.14);
-    position:relative;
-  }
-  .today-card .meal-row.current::before{
-    content:"NOW";
-    position:absolute;
-    right:16px;
-    top:8px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:9px;
-    letter-spacing:.08em;
-    color:var(--turmeric);
-    font-weight:700;
-  }
-
-  .day-card.is-today{
-    border:1.5px solid var(--turmeric);
-    box-shadow:0 8px 20px rgba(231,167,44,0.22);
-  }
-  .day-card.is-today .day-title{
-    color:var(--turmeric);
-  }
-  .day-card.is-today .day-title::after{
-    content:" · today";
-    font-family:'JetBrains Mono', monospace;
-    font-size:10px;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--chili);
-    font-weight:600;
-  }
-
-  /* FILTER PANEL */
-  .panel{
-    background:var(--cream);
-    margin:14px 14px 0;
-    border-radius:16px;
-    padding:18px 18px 16px;
-    box-shadow:0 14px 30px rgba(0,0,0,0.25);
-    position:relative;
-    z-index:2;
-  }
-  .panel h2{
-    font-family:'Fraunces', serif;
-    font-size:15px;
-    font-weight:600;
-    margin:0 0 12px;
-    color:var(--teal-deep);
-  }
-  .filter-group{margin-bottom:14px;}
-  .filter-label{
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    margin-bottom:8px;
-    display:block;
-  }
-  .chips{display:flex;flex-wrap:wrap;gap:8px;}
-  .chip{
-    border:1.5px solid #D8CBA9;
-    background:var(--white);
-    color:var(--ink);
-    font-size:13px;
-    font-weight:500;
-    padding:7px 13px;
-    border-radius:999px;
-    cursor:pointer;
-    user-select:none;
-    transition:all .15s ease;
-    display:flex;align-items:center;gap:6px;
-  }
-  .chip.active{
-    border-color:transparent;
-  }
-  .chip[data-val="veg"].active{background:var(--leaf);color:var(--white);}
-  .chip[data-val="non-veg"].active{background:var(--chili);color:var(--white);}
-  .chip[data-val="south-indian"].active{background:var(--turmeric);color:var(--teal-deep);}
-  .chip[data-val="easy"].active,
-  .chip[data-val="medium"].active,
-  .chip[data-val="hard"].active{background:var(--teal-mid);color:var(--white);}
-  .chip.quick.active{background:var(--ink);color:var(--white);}
-  .chip[data-val="kids"].active{background:var(--leaf);color:var(--white);}
-
-  .gen-btn{
-    width:100%;
-    margin-top:6px;
-    background:var(--chili);
-    color:var(--white);
-    border:none;
-    border-radius:12px;
-    padding:14px;
-    font-family:'Work Sans',sans-serif;
-    font-weight:600;
-    font-size:15px;
-    letter-spacing:.01em;
-    cursor:pointer;
-    transition:transform .1s ease, background .15s ease;
-  }
-  .gen-btn:active{transform:scale(0.98);}
-  .gen-btn:hover{background:#a83824;}
-
-  .note{
-    font-size:12px;
-    color:var(--ink-soft);
-    text-align:center;
-    margin-top:10px;
-  }
-
-  /* SCHEDULE */
-  .schedule{padding:22px 14px 0;}
-  .week-head{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-    margin:28px 4px 12px;
-    color:var(--cream);
-  }
-  .week-head .wk-num{
-    font-family:'Fraunces', serif;
-    font-size:26px;
-    font-weight:700;
-    color:var(--turmeric);
-  }
-  .week-head .wk-label{
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    color:#B9C9C6;
-  }
-  .week-head hr{
-    flex:1;
-    border:none;
-    border-top:1px dashed var(--teal-line);
-  }
-
-  .day-card{
-    background:var(--cream);
-    border-radius:14px;
-    margin-bottom:12px;
-    overflow:hidden;
-    box-shadow:0 6px 16px rgba(0,0,0,0.18);
-  }
-  .day-title{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:15px;
-    color:var(--teal-deep);
-    padding:12px 16px 8px;
-    border-bottom:1px solid #EADFC2;
-  }
-  .meal-row{
-    display:flex;
-    flex-direction:column;
-    align-items:stretch;
-    gap:8px;
-    padding:10px 16px;
-    border-bottom:1px solid #EFE6CC;
-  }
-  .meal-row:last-child{border-bottom:none;}
-  .meal-top{display:flex;align-items:flex-start;gap:12px;}
-  .buy-row{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    padding-left:68px;
-  }
-  .buy-btn{
-    flex-shrink:0;
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px;
-    font-weight:600;
-    letter-spacing:.02em;
-    padding:6px 10px;
-    border-radius:7px;
-    text-decoration:none;
-    white-space:nowrap;
-  }
-  .buy-btn.readymade{background:var(--turmeric);color:var(--teal-deep);}
-  .buy-btn.ingredients{background:rgba(91,140,90,0.14);color:var(--leaf);}
-  .today-card .buy-btn.ingredients{background:rgba(251,243,228,0.14);color:var(--cream);}
-  .tag.readymade{background:rgba(193,68,45,0.15);color:var(--chili);}
-
-  /* KIDS SECTION */
-  .kids-wrap{padding:30px 14px 0;}
-  .kids-head{
-    display:flex;
-    align-items:baseline;
-    gap:10px;
-    margin:0 4px 14px;
-    color:var(--cream);
-  }
-  .kids-head .kids-title{
-    font-family:'Fraunces', serif;
-    font-size:22px;
-    font-weight:700;
-    color:var(--turmeric);
-  }
-  .kids-head hr{flex:1;border:none;border-top:1px dashed var(--teal-line);}
-  .kids-sub{
-    font-size:12.5px;
-    color:#D9D3C1;
-    margin:-6px 4px 16px;
-    line-height:1.5;
-  }
-  .kids-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-  }
-  .kid-card{
-    background:var(--cream);
-    border-radius:12px;
-    padding:12px 12px 10px;
-    box-shadow:0 6px 14px rgba(0,0,0,0.16);
-  }
-  .kid-card .kid-emoji{font-size:20px;margin-bottom:4px;display:block;}
-  .kid-card .kid-name{
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--ink);
-    margin:0 0 2px;
-    line-height:1.25;
-  }
-  .kid-card .kid-note{
-    font-size:10.5px;
-    color:var(--ink-soft);
-    margin:0 0 8px;
-    line-height:1.35;
-  }
-  .kid-card .tag{
-    display:inline-block;
-    margin-bottom:8px;
-  }
-  .kid-card .buy-btn{width:100%;justify-content:center;}
-
-  .disclosure{
-    font-size:11.5px;
-    line-height:1.5;
-    color:#B9C9C6;
-    margin:12px 0 0;
-    max-width:48ch;
-  }
-  .meal-icon{
-    font-family:'JetBrains Mono', monospace;
-    font-size:9.5px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    width:56px;
-    flex-shrink:0;
-  }
-  .meal-main{flex:1;min-width:0;}
-  .meal-name{
-    font-size:13.5px;
-    font-weight:600;
-    color:var(--ink);
-    margin:0 0 3px;
-  }
-  .meal-meta{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    flex-wrap:wrap;
-  }
-  .ingredients-list{
-    font-size:10.5px;
-    color:var(--ink-soft);
-    margin:5px 0 0;
-    line-height:1.4;
-  }
-  .tag{
-    font-family:'JetBrains Mono', monospace;
-    font-size:10px;
-    padding:2px 7px;
-    border-radius:5px;
-    font-weight:600;
-  }
-  .tag.veg{background:rgba(91,140,90,0.15);color:var(--leaf);}
-  .tag.non-veg{background:rgba(193,68,45,0.13);color:var(--chili);}
-  .tag.south-indian{background:rgba(231,167,44,0.18);color:#96660F;}
-  .peppers{color:var(--chili);font-size:11px;letter-spacing:1px;}
-  .time-badge{
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px;
-    color:var(--ink-soft);
-    white-space:nowrap;
-  }
-
-  .empty-state{
-    color:#D9D3C1;
-    text-align:center;
-    padding:50px 24px;
-    font-size:14px;
-    line-height:1.6;
-  }
-  .empty-state b{color:var(--turmeric);}
-
-  footer{
-    text-align:center;
-    color:#8FA3A0;
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px;
-    padding:30px 20px 10px;
-    letter-spacing:.04em;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Busywomen Cook Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-<div class="wrap">
-
-  <div class="hero">
-    <p class="eyebrow">/// 4-week rotation, zero repeats per week</p>
-    <h1 class="title">Busywomen<br><em>Cook Schedule</em></h1>
-    <p class="sub">Pick what you eat, how spicy the effort gets, and how much time you have. We'll lay out breakfast, lunch and dinner for the whole month &mdash; no dish repeated within the same week.</p>
-    <div class="legend">
-      <span><span class="pep">🌶</span> <b>1</b> = easy</span>
-      <span><span class="pep">🌶🌶</span> <b>2</b> = medium</span>
-      <span><span class="pep">🌶🌶🌶</span> <b>3</b> = hard</span>
-    </div>
-    <div class="live-strip">
-      <span class="live-dot"></span>
-      <span class="live-text">Live</span>
-      <span class="live-date" id="liveDate"></span>
-      <span class="live-time" id="liveTime"></span>
-    </div>
-  </div>
-
-  <div id="todaySlot"></div>
-
-  <div class="tab-bar">
-    <button class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
-    <button class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Snacks &amp; Drinks</button>
-  </div>
-
-  <div id="scheduleView">
-    <div class="panel">
-      <h2>Build your month</h2>
-
-      <div class="filter-group">
-        <span class="filter-label">Food type</span>
-        <div class="chips" id="cat-chips">
-          <div class="chip active" data-val="veg">🌿 Veg</div>
-          <div class="chip active" data-val="non-veg">🍗 Non-veg</div>
-          <div class="chip active" data-val="south-indian">🥥 South Indian</div>
-        </div>
+  <div class="app-container">
+    <header class="hero">
+      <p class="tagline">/// 4-week rotation, zero repeats per week</p>
+      <h1 class="headline">Busywomen<br><em>Cook Schedule</em></h1>
+      <p class="subheadline">
+        Set your dietary preference, cooking effort, and time window. We build your complete breakfast, lunch, and dinner calendar with auto-generated grocery lists, weekend batch-prep blueprints, and direct calendar synchronization.
+      </p>
+      
+      <div class="effort-legend">
+        <span>🌶 <b>1</b> = quick/easy</span>
+        <span>🌶🌶 <b>2</b> = moderate</span>
+        <span>🌶🌶🌶 <b>3</b> = weekend style</span>
       </div>
+    </header>
 
-      <div class="filter-group">
-        <span class="filter-label">Effort level</span>
-        <div class="chips" id="diff-chips">
-          <div class="chip active" data-val="easy">🌶 Easy</div>
-          <div class="chip active" data-val="medium">🌶🌶 Medium</div>
-          <div class="chip active" data-val="hard">🌶🌶🌶 Hard</div>
-        </div>
-      </div>
+    <main class="planner-layout">
+      <!-- Filter & Configuration Controls -->
+      <section class="controls-card">
+        <h2>Build your month</h2>
 
-      <div class="filter-group">
-        <span class="filter-label">Time filter</span>
-        <div class="chips" id="time-chips">
-          <div class="chip quick" data-val="quick">⏱ Quick only (≤20 min)</div>
-        </div>
-      </div>
-
-      <button class="gen-btn" id="genBtn">Generate month schedule</button>
-      <p class="note" id="poolNote"></p>
-    </div>
-
-    <div class="schedule" id="scheduleOutput">
-      <div class="empty-state">Set your filters above and tap <b>Generate month schedule</b> to build your 4-week plan.</div>
-    </div>
-  </div>
-
-  <div id="kidsView" style="display:none;"></div>
-
-  <footer>BUSYWOMEN COOK SCHEDULE &middot; PLAN ONCE, COOK ALL MONTH<br>As an Amazon Associate, this app earns from qualifying purchases</footer>
-</div>
-
-<script>
-// ---------- DISH DATABASE ----------
-const DISHES = [
-  // BREAKFAST — veg
-  {name:"Poha", meal:"breakfast", category:"veg", difficulty:"easy", time:15, ingredients:["poha (flattened rice)","peanuts","mustard seeds","curry leaves"]},
-  {name:"Vegetable Upma", meal:"breakfast", category:"veg", difficulty:"easy", time:20, ingredients:["rava (semolina)","mixed vegetables","mustard seeds"]},
-  {name:"Besan Chilla", meal:"breakfast", category:"veg", difficulty:"easy", time:15, ingredients:["besan (gram flour)","onion","green chilli"]},
-  {name:"Stuffed Aloo Paratha", meal:"breakfast", category:"veg", difficulty:"medium", time:30, ingredients:["whole wheat atta","potatoes","ghee"]},
-  {name:"Vegetable Daliya", meal:"breakfast", category:"veg", difficulty:"easy", time:20, ingredients:["broken wheat daliya","mixed vegetables","cumin seeds"]},
-  {name:"Moong Dal Chilla", meal:"breakfast", category:"veg", difficulty:"medium", time:25, ingredients:["moong dal","ginger","green chilli"]},
-  {name:"Vegetable Sandwich", meal:"breakfast", category:"veg", difficulty:"easy", time:10, ingredients:["bread loaf","mixed vegetables","butter"]},
-  // BREAKFAST — non-veg
-  {name:"Egg Bhurji", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["eggs","onion","tomato"]},
-  {name:"Omelette & Toast", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10, ingredients:["eggs","bread loaf","butter"]},
-  {name:"Chicken Sausage Wrap", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["chicken sausages","tortilla wrap","lettuce"]},
-  {name:"Egg Paratha", meal:"breakfast", category:"non-veg", difficulty:"medium", time:25, ingredients:["whole wheat atta","eggs","onion"]},
-  {name:"Keema Paratha", meal:"breakfast", category:"non-veg", difficulty:"hard", time:40, ingredients:["minced mutton keema","whole wheat atta","ginger garlic paste"]},
-  {name:"Boiled Egg Salad", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10, ingredients:["eggs","lettuce","black pepper"]},
-  {name:"Chicken Sandwich", meal:"breakfast", category:"non-veg", difficulty:"easy", time:15, ingredients:["chicken breast","bread loaf","mayonnaise"]},
-  // BREAKFAST — south indian
-  {name:"Idli & Sambar", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["idli rice","urad dal","toor dal"]},
-  {name:"Plain Dosa", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa rice","urad dal","fenugreek seeds"]},
-  {name:"Masala Dosa", meal:"breakfast", category:"south-indian", difficulty:"hard", time:35, ingredients:["dosa batter mix","potatoes","mustard seeds"]},
-  {name:"Uttapam", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa batter mix","onion","tomato"]},
-  {name:"Ven Pongal", meal:"breakfast", category:"south-indian", difficulty:"medium", time:25, ingredients:["raw rice","moong dal","black pepper"]},
-  {name:"Rava Idli", meal:"breakfast", category:"south-indian", difficulty:"easy", time:20, ingredients:["rava (semolina)","curd","mustard seeds"]},
-  {name:"Medu Vada", meal:"breakfast", category:"south-indian", difficulty:"hard", time:40, ingredients:["urad dal","black pepper","curry leaves"]},
-
-  // LUNCH — veg
-  {name:"Dal Tadka & Rice", meal:"lunch", category:"veg", difficulty:"easy", time:25, ingredients:["toor dal","basmati rice","cumin seeds"]},
-  {name:"Mixed Veg Curry & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35, ingredients:["mixed vegetables","whole wheat atta","garam masala"]},
-  {name:"Rajma Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:40, ingredients:["rajma (kidney beans)","basmati rice","onion"]},
-  {name:"Chole Bhature", meal:"lunch", category:"veg", difficulty:"hard", time:50, ingredients:["kabuli chana (chickpeas)","maida flour","chole masala"]},
-  {name:"Paneer Butter Masala & Roti", meal:"lunch", category:"veg", difficulty:"medium", time:35, ingredients:["paneer","tomato puree","fresh cream"]},
-  {name:"Vegetable Pulao", meal:"lunch", category:"veg", difficulty:"medium", time:30, ingredients:["basmati rice","mixed vegetables","whole garam masala"]},
-  {name:"Kadhi Chawal", meal:"lunch", category:"veg", difficulty:"medium", time:30, ingredients:["besan (gram flour)","curd","basmati rice"]},
-  // LUNCH — non-veg
-  {name:"Chicken Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:40, ingredients:["chicken curry cut","onion","basmati rice"]},
-  {name:"Egg Curry & Roti", meal:"lunch", category:"non-veg", difficulty:"easy", time:25, ingredients:["eggs","onion tomato masala","whole wheat atta"]},
-  {name:"Fish Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35, ingredients:["fish fillet","coconut","basmati rice"]},
-  {name:"Mutton Curry & Rice", meal:"lunch", category:"non-veg", difficulty:"hard", time:60, ingredients:["mutton curry cut","onion","basmati rice"]},
-  {name:"Chicken Biryani", meal:"lunch", category:"non-veg", difficulty:"hard", time:55, ingredients:["basmati rice","chicken curry cut","biryani masala"]},
-  {name:"Butter Chicken & Naan", meal:"lunch", category:"non-veg", difficulty:"hard", time:50, ingredients:["chicken","butter","naan flour mix"]},
-  {name:"Prawn Masala & Rice", meal:"lunch", category:"non-veg", difficulty:"medium", time:35, ingredients:["prawns","coconut","basmati rice"]},
-  // LUNCH — south indian
-  {name:"Sambar Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:25, ingredients:["toor dal","sambar powder","raw rice"]},
-  {name:"Rasam Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20, ingredients:["rasam powder","tamarind","raw rice"]},
-  {name:"Curd Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:10, ingredients:["raw rice","curd","mustard seeds"]},
-  {name:"Bisi Bele Bath", meal:"lunch", category:"south-indian", difficulty:"medium", time:35, ingredients:["raw rice","toor dal","bisi bele bath powder"]},
-  {name:"Lemon Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:20, ingredients:["raw rice","lemon","peanuts"]},
-  {name:"Vegetable Kootu & Rice", meal:"lunch", category:"south-indian", difficulty:"medium", time:30, ingredients:["mixed vegetables","toor dal","raw rice"]},
-  {name:"Chettinad Chicken & Rice", meal:"lunch", category:"south-indian", difficulty:"hard", time:50, ingredients:["chicken curry cut","chettinad masala","basmati rice"]},
-
-  // DINNER — veg
-  {name:"Vegetable Soup & Bread", meal:"dinner", category:"veg", difficulty:"easy", time:15, ingredients:["mixed vegetables","bread loaf","vegetable stock cube"]},
-  {name:"Palak Paneer & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30, ingredients:["spinach","paneer","whole wheat atta"]},
-  {name:"Vegetable Khichdi", meal:"dinner", category:"veg", difficulty:"easy", time:25, ingredients:["moong dal","basmati rice","mixed vegetables"]},
-  {name:"Baingan Bharta & Roti", meal:"dinner", category:"veg", difficulty:"medium", time:30, ingredients:["brinjal (eggplant)","onion","whole wheat atta"]},
-  {name:"Stuffed Capsicum", meal:"dinner", category:"veg", difficulty:"hard", time:40, ingredients:["capsicum","potatoes","spice masala"]},
-  {name:"Mixed Dal & Roti", meal:"dinner", category:"veg", difficulty:"easy", time:25, ingredients:["mixed dals","whole wheat atta","ghee"]},
-  {name:"Vegetable Fried Rice", meal:"dinner", category:"veg", difficulty:"medium", time:25, ingredients:["basmati rice","mixed vegetables","soy sauce"]},
-  // DINNER — non-veg
-  {name:"Grilled Chicken & Salad", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["chicken breast","salad greens","olive oil"]},
-  {name:"Egg Fried Rice", meal:"dinner", category:"non-veg", difficulty:"easy", time:20, ingredients:["eggs","basmati rice","soy sauce"]},
-  {name:"Chicken Stew & Appam", meal:"dinner", category:"non-veg", difficulty:"hard", time:45, ingredients:["chicken","coconut milk","rice flour (appam)"]},
-  {name:"Fish Fry & Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["fish fillet","rice flour coating","basmati rice"]},
-  {name:"Chicken Soup", meal:"dinner", category:"non-veg", difficulty:"easy", time:20, ingredients:["chicken stock","chicken pieces","black pepper"]},
-  {name:"Mutton Stew", meal:"dinner", category:"non-veg", difficulty:"hard", time:50, ingredients:["mutton curry cut","coconut milk","potatoes"]},
-  {name:"Prawn Fried Rice", meal:"dinner", category:"non-veg", difficulty:"medium", time:30, ingredients:["prawns","basmati rice","soy sauce"]},
-  // DINNER — south indian
-  {name:"Dosa & Coconut Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:25, ingredients:["dosa batter mix","coconut","green chilli"]},
-  {name:"Idiyappam & Veg Curry", meal:"dinner", category:"south-indian", difficulty:"hard", time:40, ingredients:["rice flour (idiyappam)","mixed vegetables","coconut milk"]},
-  {name:"Adai & Chutney", meal:"dinner", category:"south-indian", difficulty:"medium", time:30, ingredients:["mixed lentils (adai mix)","raw rice","coconut"]},
-  {name:"Vegetable Stew & Appam", meal:"dinner", category:"south-indian", difficulty:"medium", time:35, ingredients:["mixed vegetables","coconut milk","rice flour (appam)"]},
-  {name:"Rava Upma", meal:"dinner", category:"south-indian", difficulty:"easy", time:20, ingredients:["rava (semolina)","mustard seeds","curry leaves"]},
-  {name:"Curd Vada", meal:"dinner", category:"south-indian", difficulty:"hard", time:40, ingredients:["urad dal","curd","mustard seeds"]},
-  {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", difficulty:"easy", time:20, ingredients:["dosa batter mix","mixed vegetables","onion"]},
-
-  // ---- READY-MADE / INSTANT (store-bought, quick) ----
-  // These are already store-bought — no separate "ingredients" link needed.
-  // Breakfast
-  {name:"Instant Poha Mix", meal:"breakfast", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Instant Oats Cup", meal:"breakfast", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Cereal & Milk", meal:"breakfast", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Frozen Aloo Paratha", meal:"breakfast", category:"veg", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Upma", meal:"breakfast", category:"south-indian", difficulty:"easy", time:5, readymade:true},
-  {name:"Instant Rava Idli Mix", meal:"breakfast", category:"south-indian", difficulty:"easy", time:10, readymade:true},
-  {name:"Ready-to-eat Idli & Sambar", meal:"breakfast", category:"south-indian", difficulty:"easy", time:5, readymade:true},
-  {name:"Ready-to-eat Egg Bhurji", meal:"breakfast", category:"non-veg", difficulty:"easy", time:8, readymade:true},
-  {name:"Frozen Chicken Sausages", meal:"breakfast", category:"non-veg", difficulty:"easy", time:10, readymade:true},
-  // Lunch
-  {name:"Ready-to-eat Dal Makhani", meal:"lunch", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Ready-to-eat Rajma", meal:"lunch", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Instant Vegetable Pulao Mix", meal:"lunch", category:"veg", difficulty:"easy", time:10, readymade:true},
-  {name:"Ready-to-eat Sambar Rice", meal:"lunch", category:"south-indian", difficulty:"easy", time:5, readymade:true},
-  {name:"Ready-to-eat Curd Rice Mix", meal:"lunch", category:"south-indian", difficulty:"easy", time:5, readymade:true},
-  {name:"Ready-to-eat Chicken Curry", meal:"lunch", category:"non-veg", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Chicken Biryani", meal:"lunch", category:"non-veg", difficulty:"easy", time:8, readymade:true},
-  // Dinner
-  {name:"Instant Khichdi Mix", meal:"dinner", category:"veg", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Palak Paneer", meal:"dinner", category:"veg", difficulty:"easy", time:5, readymade:true},
-  {name:"Frozen Paneer Tikka", meal:"dinner", category:"veg", difficulty:"easy", time:10, readymade:true},
-  {name:"Frozen Appam Pack", meal:"dinner", category:"south-indian", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Vegetable Stew", meal:"dinner", category:"south-indian", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Chicken Stew", meal:"dinner", category:"non-veg", difficulty:"easy", time:8, readymade:true},
-  {name:"Ready-to-eat Fish Curry", meal:"dinner", category:"non-veg", difficulty:"easy", time:8, readymade:true},
-];
-
-// ---------- KIDS' HEALTHY SNACKS & DRINKS ----------
-const KID_ITEMS = [
-  {name:"Roasted Makhana (Fox Nuts)", type:"snack", emoji:"🍿", note:"Light, crunchy, air-popped"},
-  {name:"Baked Vegetable Chips", type:"snack", emoji:"🥕", note:"Not fried, kid-friendly crunch"},
-  {name:"Whole Wheat Crackers", type:"snack", emoji:"🍘", note:"Good with cheese or hummus"},
-  {name:"Trail Mix (Nuts & Dried Fruit)", type:"snack", emoji:"🥜", note:"No added sugar, protein-rich"},
-  {name:"Multigrain Rusk", type:"snack", emoji:"🍞", note:"Pairs well with milk"},
-  {name:"Ragi Cookies", type:"snack", emoji:"🍪", note:"Iron-rich, no maida"},
-  {name:"Roasted Chana", type:"snack", emoji:"🫘", note:"High protein, low oil"},
-  {name:"No-added-sugar Granola Bars", type:"snack", emoji:"🍫", note:"Good lunchbox filler"},
-  {name:"Baked Banana Chips", type:"snack", emoji:"🍌", note:"Lightly salted, not deep-fried"},
-  {name:"Ready Sprouts Chaat Mix", type:"snack", emoji:"🌱", note:"Protein + fibre combo"},
-  {name:"Flavoured Milk (no added sugar)", type:"drink", emoji:"🥛", note:"Calcium for growing kids"},
-  {name:"100% Fruit Juice (no sugar added)", type:"drink", emoji:"🧃", note:"Check label for 'no added sugar'"},
-  {name:"Packaged Coconut Water", type:"drink", emoji:"🥥", note:"Natural electrolytes"},
-  {name:"Buttermilk / Chaas Mix", type:"drink", emoji:"🥤", note:"Light, good after meals"},
-  {name:"Almond Milk", type:"drink", emoji:"🌰", note:"Good dairy-free option"},
-  {name:"Kids' Protein Milk Shake Mix", type:"drink", emoji:"🍶", note:"For active or picky eaters"},
-];
-
-// ---------- MONETIZATION CONFIG ----------
-// Free to set up: sign up for Amazon Associates (affiliate.amazon.in or
-// .com), then drop your own tracking tag here.
-const CONFIG = {
-  amazonTag: "kingcloud-21",
-  amazonDomain: "amazon.in"          // use "amazon.com" for US, etc.
-};
-
-function shopLinkReadymade(dishName){
-  const q = encodeURIComponent("ready to eat " + dishName + " pack");
-  return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
-}
-function shopLinkIngredients(dish){
-  // Uses the dish's actual ingredient list (not the dish name) so results
-  // are raw grocery items, not ready-to-eat versions of the dish.
-  const terms = (dish.ingredients && dish.ingredients.length) ? dish.ingredients.join(", ") : dish.name;
-  const q = encodeURIComponent(terms + " grocery");
-  return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
-}
-function shopLinkProduct(productName){
-  const q = encodeURIComponent(productName);
-  return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
-}
-
-const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-const PEPPER = {easy:"🌶", medium:"🌶🌶", hard:"🌶🌶🌶"};
-const CAT_LABEL = {"veg":"Veg","non-veg":"Non-veg","south-indian":"South Indian"};
-
-let state = {
-  categories: new Set(["veg","non-veg","south-indian"]),
-  difficulties: new Set(["easy","medium","hard"]),
-  quickOnly: false,
-};
-
-// ---------- LIVE CLOCK ----------
-function tickClock(){
-  const now = new Date();
-  const dateStr = now.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-  const timeStr = now.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-  const dEl = document.getElementById('liveDate');
-  const tEl = document.getElementById('liveTime');
-  if(dEl) dEl.textContent = dateStr;
-  if(tEl) tEl.textContent = timeStr;
-}
-tickClock();
-setInterval(tickClock, 1000);
-
-// ---------- TODAY MAPPING ----------
-// Maps "right now" onto the generated 4-week template: which week-of-month
-// (clamped 1-4) and which weekday row (Mon..Sun) today corresponds to.
-function getTodayInfo(){
-  const now = new Date();
-  const dayOfMonth = now.getDate();
-  const weekIndex = Math.min(3, Math.floor((dayOfMonth - 1) / 7)); // 0-3
-  const dayIndex = (now.getDay() + 6) % 7; // Monday=0 ... Sunday=6
-  const hour = now.getHours();
-  let currentMeal = 'breakfast';
-  if(hour >= 11 && hour < 16) currentMeal = 'lunch';
-  else if(hour >= 16 || hour < 5) currentMeal = 'dinner';
-  return {weekIndex, dayIndex, currentMeal, now};
-}
-
-// ---------- FILTER CHIP WIRING ----------
-function wireChips(containerId, targetSet, singleToggleVal){
-  document.querySelectorAll('#'+containerId+' .chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      const val = chip.dataset.val;
-      if(singleToggleVal){
-        state.quickOnly = !state.quickOnly;
-        chip.classList.toggle('active', state.quickOnly);
-        return;
-      }
-      if(targetSet.has(val)){
-        if(targetSet.size===1) return; // keep at least one selected
-        targetSet.delete(val);
-        chip.classList.remove('active');
-      } else {
-        targetSet.add(val);
-        chip.classList.add('active');
-      }
-    });
-  });
-}
-wireChips('cat-chips', state.categories, false);
-wireChips('diff-chips', state.difficulties, false);
-wireChips('time-chips', null, true);
-
-// ---------- TAB BAR ----------
-function showTab(tab){
-  const scheduleView = document.getElementById('scheduleView');
-  const kidsView = document.getElementById('kidsView');
-  const tabSchedule = document.getElementById('tabSchedule');
-  const tabKids = document.getElementById('tabKids');
-  if(tab==='kids'){
-    scheduleView.style.display = 'none';
-    kidsView.style.display = 'block';
-    tabSchedule.classList.remove('active');
-    tabKids.classList.add('active');
-  } else {
-    scheduleView.style.display = 'block';
-    kidsView.style.display = 'none';
-    tabSchedule.classList.add('active');
-    tabKids.classList.remove('active');
-  }
-}
-document.getElementById('tabSchedule').addEventListener('click', ()=>showTab('schedule'));
-document.getElementById('tabKids').addEventListener('click', ()=>showTab('kids'));
-// Kids' Snacks & Drinks is a fixed, always-available list — render it once
-// up front so it's ready the moment someone taps the tab.
-renderKidsSection();
-
-// ---------- SCHEDULING ----------
-function shuffle(arr){
-  const a = arr.slice();
-  for(let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-  return a;
-}
-
-function filteredPool(meal){
-  return DISHES.filter(d=>
-    d.meal===meal &&
-    state.categories.has(d.category) &&
-    state.difficulties.has(d.difficulty) &&
-    (!state.quickOnly || d.time<=20)
-  );
-}
-
-// Build 7 picks for a week from a pool, minimizing repeats and avoiding
-// repeats used in the previous week when the pool allows it.
-function pickWeek(pool, prevWeekPicks){
-  if(pool.length===0) return null;
-  let candidates = shuffle(pool);
-  // try to avoid dishes used last week
-  let avoiding = candidates.filter(d=>!prevWeekPicks.includes(d.name));
-  let usable = avoiding.length>=7 ? avoiding : candidates;
-
-  const picks = [];
-  const used = new Set();
-  let cursor = shuffle(usable);
-  let idx = 0;
-  while(picks.length<7){
-    if(idx>=cursor.length){
-      // ran out of unique options, allow repeats (only if pool < 7)
-      cursor = shuffle(pool);
-      idx = 0;
-      if(pool.length < 7 && picks.length < 7 && idx===0 && used.size>=pool.length){
-        // reset used tracking to allow controlled repeats
-      }
-    }
-    const d = cursor[idx];
-    if(!used.has(d.name) || pool.length<7){
-      picks.push(d);
-      used.add(d.name);
-    }
-    idx++;
-    if(idx>500) break; // safety
-  }
-  return picks;
-}
-
-function generateSchedule(){
-  const meals = ["breakfast","lunch","dinner"];
-  const pools = {};
-  let insufficient = [];
-  meals.forEach(m=>{
-    pools[m] = filteredPool(m);
-    if(pools[m].length < 7) insufficient.push(m+" ("+pools[m].length+" dish"+(pools[m].length===1?"":"es")+" available)");
-  });
-
-  const noteEl = document.getElementById('poolNote');
-  if(pools.breakfast.length===0 || pools.lunch.length===0 || pools.dinner.length===0){
-    noteEl.textContent = "No dishes match this combination of filters. Try widening your selection.";
-    document.getElementById('scheduleOutput').innerHTML = '<div class="empty-state">No matches. Loosen a filter and try again.</div>';
-    return;
-  }
-  noteEl.textContent = insufficient.length
-    ? "Heads up: " + insufficient.join(", ") + " — some dishes may repeat within a week."
-    : "4 weeks planned. No dish repeats within the same week.";
-
-  const weeks = [];
-  let prevPicks = {breakfast:[], lunch:[], dinner:[]};
-  for(let w=0; w<4; w++){
-    const weekMeals = {};
-    meals.forEach(m=>{
-      const picks = pickWeek(pools[m], prevPicks[m]);
-      weekMeals[m] = picks;
-      prevPicks[m] = picks.map(d=>d.name);
-    });
-    const days = DAY_NAMES.map((dayName, i)=>({
-      day: dayName,
-      breakfast: weekMeals.breakfast[i],
-      lunch: weekMeals.lunch[i],
-      dinner: weekMeals.dinner[i],
-    }));
-    weeks.push(days);
-  }
-  return weeks;
-}
-
-function dishRowHTML(label, dish, mealKey, currentMeal){
-  if(!dish) return '';
-  const isNow = mealKey && mealKey===currentMeal;
-  const ingredientsPreview = (!dish.readymade && dish.ingredients && dish.ingredients.length)
-    ? `<p class="ingredients-list">Needs: ${dish.ingredients.join(", ")}</p>`
-    : '';
-  const buyRow = dish.readymade
-    ? `<div class="buy-row">
-         <a class="buy-btn readymade" href="${shopLinkProduct(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy ${dish.name} (Amazon affiliate link)">📦 Buy ${dish.name}</a>
-       </div>`
-    : `<div class="buy-row">
-         <a class="buy-btn readymade" href="${shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored" title="Buy a ready-made version of ${dish.name} (Amazon affiliate link)">📦 Ready-made</a>
-         <a class="buy-btn ingredients" href="${shopLinkIngredients(dish)}" target="_blank" rel="noopener sponsored" title="Buy ingredients for ${dish.name} (Amazon affiliate link)">🛒 Ingredients</a>
-       </div>`;
-  return `
-    <div class="meal-row${isNow ? ' current':''}">
-      <div class="meal-top">
-        <div class="meal-icon">${label}</div>
-        <div class="meal-main">
-          <p class="meal-name">${dish.name}</p>
-          <div class="meal-meta">
-            ${dish.readymade ? '<span class="tag readymade">📦 Ready-made</span>' : ''}
-            <span class="tag ${dish.category}">${CAT_LABEL[dish.category]}</span>
-            <span class="peppers">${PEPPER[dish.difficulty]}</span>
-            <span class="time-badge">⏱ ${dish.time} min</span>
+        <div class="control-group">
+          <label>Food Type</label>
+          <div class="pill-selector" id="dietFilter">
+            <button type="button" class="pill active" data-value="all">All Styles</button>
+            <button type="button" class="pill" data-value="veg">🌿 Veg</button>
+            <button type="button" class="pill" data-value="non-veg">🍗 Non-veg</button>
+            <button type="button" class="pill" data-value="south-indian">🥥 South Indian</button>
           </div>
-          ${ingredientsPreview}
+        </div>
+
+        <div class="control-group">
+          <label>Max Effort Level</label>
+          <div class="pill-selector" id="effortFilter">
+            <button type="button" class="pill active" data-value="3">Any Effort</button>
+            <button type="button" class="pill" data-value="1">🌶 Easy Only</button>
+            <button type="button" class="pill" data-value="2">🌶🌶 Up to Medium</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Family Serving Scale</label>
+          <div class="pill-selector" id="portionFilter">
+            <button type="button" class="pill" data-value="1">1 Person</button>
+            <button type="button" class="pill active" data-value="2">2 People</button>
+            <button type="button" class="pill" data-value="4">Family (4)</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="label-header-row">
+            <label>Meal Hours (For Calendar Export)</label>
+            <button type="button" id="resetPreferencesBtn" class="text-action-btn">↺ Reset to defaults</button>
+          </div>
+          <div class="time-pickers-row">
+            <div class="time-field">
+              <span>🍳 Breakfast</span>
+              <input type="time" id="breakfastTime" value="08:00" />
+            </div>
+            <div class="time-field">
+              <span>🍛 Lunch</span>
+              <input type="time" id="lunchTime" value="13:00" />
+            </div>
+            <div class="time-field">
+              <span>🍲 Dinner</span>
+              <input type="time" id="dinnerTime" value="20:00" />
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group inline-toggle">
+          <label class="switch-label">
+            <input type="checkbox" id="quickTimeOnly" />
+            <span class="slider"></span>
+            <span class="switch-text">⏱ Quick only (≤20 min)</span>
+          </label>
+        </div>
+
+        <button id="generateBtn" class="primary-btn">Generate Month Schedule</button>
+      </section>
+
+      <!-- Schedule Results -->
+      <section id="scheduleOutput" class="schedule-section">
+        <div class="empty-state">
+          Set your filters above and tap <b>Generate Month Schedule</b> to view your meal blueprint.
+        </div>
+      </section>
+    </main>
+
+    <!-- Floating Quick Actions Bar -->
+    <aside id="floatingActionBar" class="floating-actions hidden">
+      <button id="openGroceryBtn" class="action-btn">
+        🛒 <span>Grocery List</span>
+      </button>
+      <button id="openPrepBtn" class="action-btn">
+        ⚡ <span>Sunday Prep Guide</span>
+      </button>
+      <button id="shareWhatsAppBtn" class="action-btn">
+        💬 <span>Share Plan</span>
+      </button>
+      <div class="calendar-export-group">
+        <select id="reminderInterval" class="reminder-select" aria-label="Set reminder alert">
+          <option value="-PT15M">🔔 15 min before</option>
+          <option value="-PT30M" selected>🔔 30 min before</option>
+          <option value="-PT1H">🔔 1 hour before</option>
+          <option value="-PT2H">🔔 2 hours before</option>
+          <option value="none">🔕 No reminder</option>
+        </select>
+        <button id="exportCalendarBtn" class="action-btn">
+          📅 <span>Export .ics</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Modal Drawer: Smart Grocery List -->
+    <div id="groceryModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Smart Grocery Aggregator</h3>
+          <button class="close-modal" data-target="groceryModal">&times;</button>
+        </div>
+        <p class="modal-sub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
+        <div id="groceryListContent" class="grocery-grid"></div>
+        <div class="modal-footer">
+          <button id="copyGroceryBtn" class="secondary-btn">📋 Copy to Clipboard</button>
+          <button class="primary-btn close-modal" data-target="groceryModal">Done</button>
         </div>
       </div>
-      ${buyRow}
-    </div>`;
-}
+    </div>
 
-function renderTodayCard(weeks){
-  const slot = document.getElementById('todaySlot');
-  if(!weeks){ slot.innerHTML = ''; return; }
-  const info = getTodayInfo();
-  const week = weeks[info.weekIndex];
-  const today = week ? week[info.dayIndex] : null;
-  if(!today){ slot.innerHTML = ''; return; }
-  const dateStr = info.now.toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
-  slot.innerHTML = `
-    <div class="today-card">
-      <div class="today-head">
-        <p class="eyebrow">Today &middot; ${today.day}</p>
-        <span class="today-date">${dateStr}</span>
+    <!-- Modal Drawer: Sunday Batch Prep -->
+    <div id="prepModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Sunday 45-Min Power Prep</h3>
+          <button class="close-modal" data-target="prepModal">&times;</button>
+        </div>
+        <p class="modal-sub">Spend 45 minutes on Sunday to reduce weekday cooking effort to under 15 minutes.</p>
+        <div id="prepListContent" class="prep-checklist"></div>
+        <div class="modal-footer">
+          <button class="primary-btn close-modal" data-target="prepModal">Ready for the Week</button>
+        </div>
       </div>
-      ${dishRowHTML('Breakfast', today.breakfast, 'breakfast', info.currentMeal)}
-      ${dishRowHTML('Lunch', today.lunch, 'lunch', info.currentMeal)}
-      ${dishRowHTML('Dinner', today.dinner, 'dinner', info.currentMeal)}
-    </div>`;
-}
+    </div>
 
-function renderSchedule(weeks){
-  const out = document.getElementById('scheduleOutput');
-  if(!weeks){ return; }
-  const info = getTodayInfo();
-  let html = '';
-  weeks.forEach((days, wi)=>{
-    html += `<div class="week-head"><span class="wk-num">Week ${wi+1}</span><span class="wk-label">7 days &middot; no repeats</span><hr></div>`;
-    days.forEach((d, di)=>{
-      const isToday = wi===info.weekIndex && di===info.dayIndex;
-      html += `<div class="day-card${isToday ? ' is-today':''}">
-        <div class="day-title">${d.day}</div>
-        ${dishRowHTML('Breakfast', d.breakfast)}
-        ${dishRowHTML('Lunch', d.lunch)}
-        ${dishRowHTML('Dinner', d.dinner)}
-      </div>`;
-    });
-  });
-  out.innerHTML = html;
-  renderTodayCard(weeks);
-}
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-function renderKidsSection(){
-  const wrap = document.getElementById('kidsView');
-  const cards = KID_ITEMS.map(item => `
-    <div class="kid-card">
-      <span class="kid-emoji">${item.emoji}</span>
-      <p class="kid-name">${item.name}</p>
-      <p class="kid-note">${item.note}</p>
-      <span class="tag ${item.type==='drink' ? 'south-indian':'veg'}">${item.type==='drink' ? 'Drink':'Snack'}</span>
-      <a class="buy-btn readymade" href="${shopLinkProduct(item.name)}" target="_blank" rel="noopener sponsored" title="Buy ${item.name} (Amazon affiliate link)">📦 Buy on Amazon</a>
-    </div>`).join('');
-  wrap.innerHTML = `
-    <div class="kids-wrap">
-      <div class="kids-head"><span class="kids-title">Kids' Snacks &amp; Drinks</span><hr></div>
-      <p class="kids-sub">A separate healthy pick list for kids' tiffin boxes and after-school snacks — tap any item to shop it on Amazon.</p>
-      <div class="kids-grid">${cards}</div>
-    </div>`;
-}
+    <footer class="site-footer">
+      BUSYWOMEN COOK SCHEDULE · PLAN ONCE, COOK ALL MONTH<br>
+      As an Amazon Associate, this app earns from qualifying purchases
+    </footer>
+  </div>
 
-async function saveState(weeks){
-  try{
-    await window.storage.set('last-schedule', JSON.stringify({
-      weeks,
-      categories: [...state.categories],
-      difficulties: [...state.difficulties],
-      quickOnly: state.quickOnly
-    }));
-  }catch(e){ console.error('Could not save schedule', e); }
-}
-
-async function loadState(){
-  try{
-    const res = await window.storage.get('last-schedule');
-    if(res && res.value){
-      const data = JSON.parse(res.value);
-      if(data.categories){
-        state.categories = new Set(data.categories);
-        state.difficulties = new Set(data.difficulties);
-        state.quickOnly = !!data.quickOnly;
-        syncChipsToState();
-      }
-      if(data.weeks){
-        lastWeeks = data.weeks;
-        renderSchedule(data.weeks);
-        document.getElementById('poolNote').textContent = "Showing your last generated plan.";
-      }
-    }
-  }catch(e){ /* no saved schedule yet */ }
-}
-
-function syncChipsToState(){
-  document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.toggle('active', state.categories.has(c.dataset.val)));
-  document.querySelectorAll('#diff-chips .chip').forEach(c=>c.classList.toggle('active', state.difficulties.has(c.dataset.val)));
-  document.querySelectorAll('#time-chips .chip').forEach(c=>c.classList.toggle('active', state.quickOnly));
-}
-
-let lastWeeks = null;
-
-document.getElementById('genBtn').addEventListener('click', ()=>{
-  const weeks = generateSchedule();
-  if(weeks){
-    lastWeeks = weeks;
-    renderSchedule(weeks);
-    saveState(weeks);
-  }
-});
-
-// Keep the "NOW" meal badge and today-highlight accurate as time passes
-setInterval(()=>{
-  if(lastWeeks){
-    renderTodayCard(lastWeeks);
-  }
-}, 60000);
-
-loadState();
-</script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
