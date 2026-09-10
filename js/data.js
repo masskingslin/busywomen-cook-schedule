@@ -1,215 +1,186 @@
-const MEAL_DATABASE = [
-  // Breakfasts
-  {
-    id: "b1",
-    name: "Idli with Podi & Sambar",
-    type: "breakfast",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 15,
-    ingredients: [
-      { name: "Idli Batter", qty: 250, unit: "ml" },
-      { name: "Idli Podi / Ghee", qty: 2, unit: "tbsp" },
-      { name: "Mixed Dal Sambar", qty: 200, unit: "ml" }
-    ],
-    prepNote: "Use pre-fermented batter. Sambar cooked in batch."
-  },
-  {
-    id: "b2",
-    name: "Crispy Dosa with Coconut Chutney",
-    type: "breakfast",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 15,
-    ingredients: [
-      { name: "Dosa Batter", qty: 250, unit: "ml" },
-      { name: "Fresh Grated Coconut", qty: 0.5, unit: "cup" },
-      { name: "Green Chillies", qty: 2, unit: "pcs" }
-    ],
-    prepNote: "Grind fresh coconut chutney while tawa heats up."
-  },
-  {
-    id: "b3",
-    name: "Vegetable Rava Upma",
-    type: "breakfast",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 20,
-    ingredients: [
-      { name: "Roasted Sooji / Rava", qty: 1, unit: "cup" },
-      { name: "Diced Carrots & Beans", qty: 0.5, unit: "cup" },
-      { name: "Mustard & Curry Leaves", qty: 1, unit: "tsp" }
-    ],
-    prepNote: "Pre-roast rava during weekend batch prep."
-  },
-  {
-    id: "b4",
-    name: "Egg Bhurji with Multigrain Toast",
-    type: "breakfast",
-    tags: ["non-veg"],
-    effort: 1,
-    time: 15,
-    ingredients: [
-      { name: "Eggs", qty: 2, unit: "pcs" },
-      { name: "Onion & Tomato", qty: 1, unit: "each" },
-      { name: "Multigrain Bread", qty: 2, unit: "slices" }
-    ],
-    prepNote: "Whisk eggs with turmeric and ground black pepper."
-  },
-  {
-    id: "b5",
-    name: "Ven Pongal & Coconut Chutney",
-    type: "breakfast",
-    tags: ["veg", "south-indian"],
-    effort: 2,
-    time: 25,
-    ingredients: [
-      { name: "Raw Rice & Moong Dal", qty: 1, unit: "cup" },
-      { name: "Black Pepper & Cumin", qty: 1, unit: "tbsp" },
-      { name: "Cashews & Pure Ghee", qty: 2, unit: "tbsp" }
-    ],
-    prepNote: "Pressure cook dal and rice together."
-  },
+// ============================================================
+// BUSYWOMEN COOK SCHEDULE — DATA
+// effort: 1 = easy/quick, 2 = moderate, 3 = weekend style
+// ingredients: quantities are for a 2-person base serving;
+// the grocery aggregator scales these by the portion selector.
+// ============================================================
 
-  // Lunches
-  {
-    id: "l1",
-    name: "Drumstick Sambar Rice & Potato Roast",
-    type: "lunch",
-    tags: ["veg", "south-indian"],
-    effort: 2,
-    time: 30,
-    ingredients: [
-      { name: "Toor Dal", qty: 0.75, unit: "cup" },
-      { name: "Drumstick & Shallots", qty: 150, unit: "g" },
-      { name: "Potatoes", qty: 2, unit: "pcs" },
-      { name: "Ponni Boiled Rice", qty: 1.5, unit: "cups" }
-    ],
-    prepNote: "Boil potatoes and peel on Sunday night."
-  },
-  {
-    id: "l2",
-    name: "Pepper Chicken Masala with Steamed Rice",
-    type: "lunch",
-    tags: ["non-veg", "south-indian"],
-    effort: 2,
-    time: 25,
-    ingredients: [
-      { name: "Chicken (Curry Cut)", qty: 350, unit: "g" },
-      { name: "Crushed Black Pepper", qty: 1.5, unit: "tbsp" },
-      { name: "Curry Leaves & Onions", qty: 2, unit: "pcs" },
-      { name: "Ponni Boiled Rice", qty: 1.5, unit: "cups" }
-    ],
-    prepNote: "Keep chicken marinated in pepper, curd, and salt."
-  },
-  {
-    id: "l3",
-    name: "Curd Rice with Lemon Pickle & Pomegranate",
-    type: "lunch",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 15,
-    ingredients: [
-      { name: "Cooked Rice", qty: 2, unit: "cups" },
-      { name: "Fresh Thick Curd", qty: 1.5, unit: "cups" },
-      { name: "Pomegranate Arils", qty: 0.25, unit: "cup" },
-      { name: "Mustard Tempering", qty: 1, unit: "tsp" }
-    ],
-    prepNote: "Mash warm rice with a splash of milk before adding curd."
-  },
-  {
-    id: "l4",
-    name: "Fish Curry (Meen Kulambu) & Rice",
-    type: "lunch",
-    tags: ["non-veg", "south-indian"],
-    effort: 3,
-    time: 35,
-    ingredients: [
-      { name: "Fish Steaks", qty: 300, unit: "g" },
-      { name: "Tamarind Pulp", qty: 2, unit: "tbsp" },
-      { name: "Shallots & Fenugreek", qty: 100, unit: "g" },
-      { name: "Ponni Boiled Rice", qty: 1.5, unit: "cups" }
-    ],
-    prepNote: "Extract tamarind pulp ahead of time."
-  },
-  {
-    id: "l5",
-    name: "Cabbage Chana Dal Kootu & Rasam",
-    type: "lunch",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 20,
-    ingredients: [
-      { name: "Cabbage (Shredded)", qty: 200, unit: "g" },
-      { name: "Chana Dal", qty: 0.5, unit: "cup" },
-      { name: "Rasam Powder & Tomatoes", qty: 2, unit: "pcs" }
-    ],
-    prepNote: "Pre-chop cabbage into airtight containers."
-  },
+const CONFIG = {
+  amazonTag: "kingcloud-21",
+  amazonDomain: "amazon.in"
+};
 
-  // Dinners
-  {
-    id: "d1",
-    name: "Phulka with Paneer Butter Masala",
-    type: "dinner",
-    tags: ["veg"],
-    effort: 2,
-    time: 25,
-    ingredients: [
-      { name: "Whole Wheat Atta", qty: 1.5, unit: "cups" },
-      { name: "Paneer Cubes", qty: 200, unit: "g" },
-      { name: "Tomato Puree & Kasuri Methi", qty: 1, unit: "cup" }
-    ],
-    prepNote: "Keep kneaded atta rested in airtight box."
-  },
-  {
-    id: "d2",
-    name: "Egg Kothu Parotta (Street Style)",
-    type: "dinner",
-    tags: ["non-veg", "south-indian"],
-    effort: 2,
-    time: 20,
-    ingredients: [
-      { name: "Shredded Parottas", qty: 3, unit: "pcs" },
-      { name: "Eggs", qty: 2, unit: "pcs" },
-      { name: "Salna / Chicken Gravy", qty: 0.5, unit: "cup" }
-    ],
-    prepNote: "Shred parottas and keep leftover salna ready."
-  },
-  {
-    id: "d3",
-    name: "Crispy Rava Dosa with Tomato-Garlic Chutney",
-    type: "dinner",
-    tags: ["veg", "south-indian"],
-    effort: 1,
-    time: 20,
-    ingredients: [
-      { name: "Sooji & Rice Flour Mix", qty: 1, unit: "cup" },
-      { name: "Cumin & Green Chillies", qty: 1, unit: "tbsp" },
-      { name: "Tomatoes & Garlic", qty: 3, unit: "cloves" }
-    ],
-    prepNote: "Instant thin batter mix - no fermentation required."
-  },
-  {
-    id: "d4",
-    name: "Grilled Chicken Strips with Mint Dressing",
-    type: "dinner",
-    tags: ["non-veg"],
-    effort: 1,
-    time: 15,
-    ingredients: [
-      { name: "Chicken Breast Strips", qty: 250, unit: "g" },
-      { name: "Cucumber & Cherry Tomatoes", qty: 1, unit: "cup" },
-      { name: "Hung Curd & Mint Sauce", qty: 3, unit: "tbsp" }
-    ],
-    prepNote: "Chicken pre-boiled or baked in batch."
-  }
-];
+const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const CAT_LABEL = { "veg":"Veg", "non-veg":"Non-veg", "south-indian":"South Indian" };
+const PEPPER = { 1:"🌶", 2:"🌶🌶", 3:"🌶🌶🌶" };
 
-const SUNDAY_PREP_ROUTINE = [
-  { task: "Ferment Dosa/Idli Batter", detail: "Grind or unpack 2kg batter into two distinct airtight boxes." },
-  { task: "Boil & Peel Potatoes", detail: "Pressure-cook 6 medium potatoes; store unmashed with skin off." },
-  { task: "Chop Aromatics", detail: "Dice 1kg onions and mince 200g garlic/ginger in food processor." },
-  { task: "Roast Rava & Nuts", detail: "Dry-roast 500g rava with mustard seeds and cashews for instant upma." },
-  { task: "Batch Tamarind & Tomato Paste", detail: "Cook down 400g crushed tomatoes with turmeric for rasam/curry bases." }
+const DISHES = [
+  // ---------------- BREAKFAST — VEG ----------------
+  {name:"Poha", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Poha (flattened rice)", qty:1.5, unit:"cup"},{name:"Peanuts", qty:2, unit:"tbsp"},{name:"Curry leaves", qty:8, unit:"leaves"}]},
+  {name:"Vegetable Upma", meal:"breakfast", category:"veg", effort:1, time:20, ingredients:[
+    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Besan Chilla", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Besan (gram flour)", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Stuffed Aloo Paratha", meal:"breakfast", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Potatoes", qty:3, unit:"pcs"},{name:"Ghee", qty:2, unit:"tbsp"}]},
+  {name:"Vegetable Daliya", meal:"breakfast", category:"veg", effort:1, time:20, ingredients:[
+    {name:"Broken wheat daliya", qty:1, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Cumin seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Moong Dal Chilla", meal:"breakfast", category:"veg", effort:2, time:25, ingredients:[
+    {name:"Moong dal", qty:1, unit:"cup"},{name:"Ginger", qty:1, unit:"tbsp"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Vegetable Sandwich", meal:"breakfast", category:"veg", effort:1, time:10, ingredients:[
+    {name:"Bread loaf", qty:6, unit:"slices"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Butter", qty:2, unit:"tbsp"}]},
+
+  // ---------------- BREAKFAST — NON-VEG ----------------
+  {name:"Egg Bhurji", meal:"breakfast", category:"non-veg", effort:1, time:15, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Onion", qty:1, unit:"pcs"},{name:"Tomato", qty:1, unit:"pcs"}]},
+  {name:"Omelette & Toast", meal:"breakfast", category:"non-veg", effort:1, time:10, ingredients:[
+    {name:"Eggs", qty:3, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Butter", qty:1, unit:"tbsp"}]},
+  {name:"Chicken Sausage Wrap", meal:"breakfast", category:"non-veg", effort:1, time:15, ingredients:[
+    {name:"Chicken sausages", qty:4, unit:"pcs"},{name:"Tortilla wrap", qty:2, unit:"pcs"},{name:"Lettuce", qty:4, unit:"leaves"}]},
+  {name:"Egg Paratha", meal:"breakfast", category:"non-veg", effort:2, time:25, ingredients:[
+    {name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Eggs", qty:3, unit:"pcs"},{name:"Onion", qty:1, unit:"pcs"}]},
+  {name:"Keema Paratha", meal:"breakfast", category:"non-veg", effort:3, time:40, ingredients:[
+    {name:"Minced mutton keema", qty:300, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Ginger garlic paste", qty:1, unit:"tbsp"}]},
+  {name:"Boiled Egg Salad", meal:"breakfast", category:"non-veg", effort:1, time:10, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Lettuce", qty:6, unit:"leaves"},{name:"Black pepper", qty:0.5, unit:"tsp"}]},
+  {name:"Chicken Sandwich", meal:"breakfast", category:"non-veg", effort:1, time:15, ingredients:[
+    {name:"Chicken breast", qty:200, unit:"g"},{name:"Bread loaf", qty:6, unit:"slices"},{name:"Mayonnaise", qty:2, unit:"tbsp"}]},
+
+  // ---------------- BREAKFAST — SOUTH INDIAN ----------------
+  {name:"Idli & Sambar", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Idli rice", qty:1, unit:"cup"},{name:"Urad dal", qty:0.25, unit:"cup"},{name:"Toor dal", qty:0.5, unit:"cup"}]},
+  {name:"Plain Dosa", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Dosa rice", qty:1, unit:"cup"},{name:"Urad dal", qty:0.25, unit:"cup"},{name:"Fenugreek seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Masala Dosa", meal:"breakfast", category:"south-indian", effort:3, time:35, ingredients:[
+    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Potatoes", qty:3, unit:"pcs"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Uttapam", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"},{name:"Tomato", qty:1, unit:"pcs"}]},
+  {name:"Ven Pongal", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Raw rice", qty:1, unit:"cup"},{name:"Moong dal", qty:0.5, unit:"cup"},{name:"Black pepper", qty:1, unit:"tsp"}]},
+  {name:"Rava Idli", meal:"breakfast", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Medu Vada", meal:"breakfast", category:"south-indian", effort:3, time:40, ingredients:[
+    {name:"Urad dal", qty:1, unit:"cup"},{name:"Black pepper", qty:1, unit:"tsp"},{name:"Curry leaves", qty:8, unit:"leaves"}]},
+
+  // ---------------- LUNCH — VEG ----------------
+  {name:"Dal Tadka & Rice", meal:"lunch", category:"veg", effort:1, time:25, ingredients:[
+    {name:"Toor dal", qty:1, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Cumin seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Mixed Veg Curry & Roti", meal:"lunch", category:"veg", effort:2, time:35, ingredients:[
+    {name:"Mixed vegetables", qty:3, unit:"cup"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Garam masala", qty:1, unit:"tsp"}]},
+  {name:"Rajma Chawal", meal:"lunch", category:"veg", effort:2, time:40, ingredients:[
+    {name:"Rajma (kidney beans)", qty:1, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Onion", qty:2, unit:"pcs"}]},
+  {name:"Chole Bhature", meal:"lunch", category:"veg", effort:3, time:50, ingredients:[
+    {name:"Kabuli chana (chickpeas)", qty:1, unit:"cup"},{name:"Maida flour", qty:2, unit:"cup"},{name:"Chole masala", qty:1, unit:"tbsp"}]},
+  {name:"Paneer Butter Masala & Roti", meal:"lunch", category:"veg", effort:2, time:35, ingredients:[
+    {name:"Paneer", qty:250, unit:"g"},{name:"Tomato puree", qty:1, unit:"cup"},{name:"Fresh cream", qty:3, unit:"tbsp"}]},
+  {name:"Vegetable Pulao", meal:"lunch", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Whole garam masala", qty:1, unit:"tsp"}]},
+  {name:"Kadhi Chawal", meal:"lunch", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Besan (gram flour)", qty:0.5, unit:"cup"},{name:"Curd", qty:1, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+
+  // ---------------- LUNCH — NON-VEG ----------------
+  {name:"Chicken Curry & Rice", meal:"lunch", category:"non-veg", effort:2, time:40, ingredients:[
+    {name:"Chicken curry cut", qty:500, unit:"g"},{name:"Onion", qty:2, unit:"pcs"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+  {name:"Egg Curry & Roti", meal:"lunch", category:"non-veg", effort:1, time:25, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Onion tomato masala", qty:1, unit:"cup"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Fish Curry & Rice", meal:"lunch", category:"non-veg", effort:2, time:35, ingredients:[
+    {name:"Fish fillet", qty:400, unit:"g"},{name:"Coconut", qty:0.5, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+  {name:"Mutton Curry & Rice", meal:"lunch", category:"non-veg", effort:3, time:60, ingredients:[
+    {name:"Mutton curry cut", qty:500, unit:"g"},{name:"Onion", qty:2, unit:"pcs"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+  {name:"Chicken Biryani", meal:"lunch", category:"non-veg", effort:3, time:55, ingredients:[
+    {name:"Basmati rice", qty:2, unit:"cup"},{name:"Chicken curry cut", qty:500, unit:"g"},{name:"Biryani masala", qty:2, unit:"tbsp"}]},
+  {name:"Butter Chicken & Naan", meal:"lunch", category:"non-veg", effort:3, time:50, ingredients:[
+    {name:"Chicken", qty:500, unit:"g"},{name:"Butter", qty:3, unit:"tbsp"},{name:"Naan flour mix", qty:2, unit:"cup"}]},
+  {name:"Prawn Masala & Rice", meal:"lunch", category:"non-veg", effort:2, time:35, ingredients:[
+    {name:"Prawns", qty:300, unit:"g"},{name:"Coconut", qty:0.5, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+
+  // ---------------- LUNCH — SOUTH INDIAN ----------------
+  {name:"Sambar Rice", meal:"lunch", category:"south-indian", effort:1, time:25, ingredients:[
+    {name:"Toor dal", qty:1, unit:"cup"},{name:"Sambar powder", qty:1, unit:"tbsp"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
+  {name:"Rasam Rice", meal:"lunch", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Rasam powder", qty:1, unit:"tbsp"},{name:"Tamarind", qty:1, unit:"tbsp"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
+  {name:"Curd Rice", meal:"lunch", category:"south-indian", effort:1, time:10, ingredients:[
+    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Curd", qty:1, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Bisi Bele Bath", meal:"lunch", category:"south-indian", effort:2, time:35, ingredients:[
+    {name:"Raw rice", qty:1, unit:"cup"},{name:"Toor dal", qty:0.5, unit:"cup"},{name:"Bisi bele bath powder", qty:2, unit:"tbsp"}]},
+  {name:"Lemon Rice", meal:"lunch", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Lemon", qty:2, unit:"pcs"},{name:"Peanuts", qty:2, unit:"tbsp"}]},
+  {name:"Vegetable Kootu & Rice", meal:"lunch", category:"south-indian", effort:2, time:30, ingredients:[
+    {name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Toor dal", qty:0.5, unit:"cup"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
+  {name:"Chettinad Chicken & Rice", meal:"lunch", category:"south-indian", effort:3, time:50, ingredients:[
+    {name:"Chicken curry cut", qty:500, unit:"g"},{name:"Chettinad masala", qty:2, unit:"tbsp"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+
+  // ---------------- DINNER — VEG ----------------
+  {name:"Vegetable Soup & Bread", meal:"dinner", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Vegetable stock cube", qty:1, unit:"pcs"}]},
+  {name:"Palak Paneer & Roti", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Spinach", qty:300, unit:"g"},{name:"Paneer", qty:200, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Vegetable Khichdi", meal:"dinner", category:"veg", effort:1, time:25, ingredients:[
+    {name:"Moong dal", qty:0.5, unit:"cup"},{name:"Basmati rice", qty:1, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"}]},
+  {name:"Baingan Bharta & Roti", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Brinjal (eggplant)", qty:2, unit:"pcs"},{name:"Onion", qty:1, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Stuffed Capsicum", meal:"dinner", category:"veg", effort:3, time:40, ingredients:[
+    {name:"Capsicum", qty:4, unit:"pcs"},{name:"Potatoes", qty:2, unit:"pcs"},{name:"Spice masala", qty:1, unit:"tbsp"}]},
+  {name:"Mixed Dal & Roti", meal:"dinner", category:"veg", effort:1, time:25, ingredients:[
+    {name:"Mixed dals", qty:1, unit:"cup"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Ghee", qty:1, unit:"tbsp"}]},
+  {name:"Vegetable Fried Rice", meal:"dinner", category:"veg", effort:2, time:25, ingredients:[
+    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Mixed vegetables", qty:1.5, unit:"cup"},{name:"Soy sauce", qty:1, unit:"tbsp"}]},
+
+  // ---------------- DINNER — NON-VEG ----------------
+  {name:"Grilled Chicken & Salad", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
+    {name:"Chicken breast", qty:300, unit:"g"},{name:"Salad greens", qty:2, unit:"cup"},{name:"Olive oil", qty:1, unit:"tbsp"}]},
+  {name:"Egg Fried Rice", meal:"dinner", category:"non-veg", effort:1, time:20, ingredients:[
+    {name:"Eggs", qty:3, unit:"pcs"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Soy sauce", qty:1, unit:"tbsp"}]},
+  {name:"Chicken Stew & Appam", meal:"dinner", category:"non-veg", effort:3, time:45, ingredients:[
+    {name:"Chicken", qty:400, unit:"g"},{name:"Coconut milk", qty:1, unit:"cup"},{name:"Rice flour (appam)", qty:1, unit:"cup"}]},
+  {name:"Fish Fry & Rice", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
+    {name:"Fish fillet", qty:400, unit:"g"},{name:"Rice flour coating", qty:0.5, unit:"cup"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+  {name:"Chicken Soup", meal:"dinner", category:"non-veg", effort:1, time:20, ingredients:[
+    {name:"Chicken stock", qty:3, unit:"cup"},{name:"Chicken pieces", qty:200, unit:"g"},{name:"Black pepper", qty:0.5, unit:"tsp"}]},
+  {name:"Mutton Stew", meal:"dinner", category:"non-veg", effort:3, time:50, ingredients:[
+    {name:"Mutton curry cut", qty:500, unit:"g"},{name:"Coconut milk", qty:1, unit:"cup"},{name:"Potatoes", qty:2, unit:"pcs"}]},
+  {name:"Prawn Fried Rice", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
+    {name:"Prawns", qty:300, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Soy sauce", qty:1, unit:"tbsp"}]},
+
+  // ---------------- DINNER — SOUTH INDIAN ----------------
+  {name:"Dosa & Coconut Chutney", meal:"dinner", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Coconut", qty:0.5, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Idiyappam & Veg Curry", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
+    {name:"Rice flour (idiyappam)", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Coconut milk", qty:1, unit:"cup"}]},
+  {name:"Adai & Chutney", meal:"dinner", category:"south-indian", effort:2, time:30, ingredients:[
+    {name:"Mixed lentils (adai mix)", qty:1, unit:"cup"},{name:"Raw rice", qty:0.5, unit:"cup"},{name:"Coconut", qty:0.5, unit:"cup"}]},
+  {name:"Vegetable Stew & Appam", meal:"dinner", category:"south-indian", effort:2, time:35, ingredients:[
+    {name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Coconut milk", qty:1, unit:"cup"},{name:"Rice flour (appam)", qty:1, unit:"cup"}]},
+  {name:"Rava Upma", meal:"dinner", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"},{name:"Curry leaves", qty:8, unit:"leaves"}]},
+  {name:"Curd Vada", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
+    {name:"Urad dal", qty:1, unit:"cup"},{name:"Curd", qty:1, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
+
+  // ---------------- READY-MADE / INSTANT (store-bought, quick) ----------------
+  {name:"Instant Poha Mix", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Instant Poha Mix", qty:1, unit:"pack"}]},
+  {name:"Instant Oats Cup", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Instant Oats Cup", qty:1, unit:"pack"}]},
+  {name:"Cereal & Milk", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Breakfast Cereal", qty:1, unit:"pack"}]},
+  {name:"Frozen Aloo Paratha", meal:"breakfast", category:"veg", effort:1, time:8, readymade:true, ingredients:[{name:"Frozen Aloo Paratha", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Upma", meal:"breakfast", category:"south-indian", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Upma", qty:1, unit:"pack"}]},
+  {name:"Instant Rava Idli Mix", meal:"breakfast", category:"south-indian", effort:1, time:10, readymade:true, ingredients:[{name:"Instant Rava Idli Mix", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Idli & Sambar", meal:"breakfast", category:"south-indian", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Idli & Sambar", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Egg Bhurji", meal:"breakfast", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Egg Bhurji", qty:1, unit:"pack"}]},
+  {name:"Frozen Chicken Sausages", meal:"breakfast", category:"non-veg", effort:1, time:10, readymade:true, ingredients:[{name:"Frozen Chicken Sausages", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Dal Makhani", meal:"lunch", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Dal Makhani", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Rajma", meal:"lunch", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Rajma", qty:1, unit:"pack"}]},
+  {name:"Instant Vegetable Pulao Mix", meal:"lunch", category:"veg", effort:1, time:10, readymade:true, ingredients:[{name:"Instant Vegetable Pulao Mix", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Sambar Rice", meal:"lunch", category:"south-indian", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Sambar Rice", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Curd Rice Mix", meal:"lunch", category:"south-indian", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Curd Rice Mix", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Chicken Curry", meal:"lunch", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Chicken Curry", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Chicken Biryani", meal:"lunch", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Chicken Biryani", qty:1, unit:"pack"}]},
+  {name:"Instant Khichdi Mix", meal:"dinner", category:"veg", effort:1, time:8, readymade:true, ingredients:[{name:"Instant Khichdi Mix", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Palak Paneer", meal:"dinner", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Ready-to-eat Palak Paneer", qty:1, unit:"pack"}]},
+  {name:"Frozen Paneer Tikka", meal:"dinner", category:"veg", effort:1, time:10, readymade:true, ingredients:[{name:"Frozen Paneer Tikka", qty:1, unit:"pack"}]},
+  {name:"Frozen Appam Pack", meal:"dinner", category:"south-indian", effort:1, time:8, readymade:true, ingredients:[{name:"Frozen Appam Pack", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Vegetable Stew", meal:"dinner", category:"south-indian", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Vegetable Stew", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Chicken Stew", meal:"dinner", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Chicken Stew", qty:1, unit:"pack"}]},
+  {name:"Ready-to-eat Fish Curry", meal:"dinner", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Fish Curry", qty:1, unit:"pack"}]},
 ];
