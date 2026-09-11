@@ -23,9 +23,23 @@
         <span>🌶🌶 <b>2</b> = moderate</span>
         <span>🌶🌶🌶 <b>3</b> = weekend style</span>
       </div>
+
+      <div class="live-strip">
+        <span class="live-dot"></span>
+        <span class="live-text">Live</span>
+        <span class="live-date" id="liveDate"></span>
+        <span class="live-time" id="liveTime"></span>
+      </div>
     </header>
 
-    <main class="planner-layout">
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
+      <button type="button" class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Best Deals</button>
+    </div>
+
+    <div id="kidsView" style="display:none;"></div>
+
+    <main class="planner-layout" id="scheduleView">
       <!-- Filter & Configuration Controls -->
       <section class="controls-card">
         <h2>Build your month</h2>
