@@ -184,3 +184,23 @@ const DISHES = [
   {name:"Ready-to-eat Chicken Stew", meal:"dinner", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Chicken Stew", qty:1, unit:"pack"}]},
   {name:"Ready-to-eat Fish Curry", meal:"dinner", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Fish Curry", qty:1, unit:"pack"}]},
 ];
+
+// ---------------- KIDS' SNACKS & DRINKS (best-price picks) ----------------
+const KID_ITEMS = [
+  {name:"Roasted Makhana (Fox Nuts)", type:"snack", emoji:"🍿", note:"Light, crunchy, air-popped", budget:true},
+  {name:"Baked Vegetable Chips", type:"snack", emoji:"🥕", note:"Not fried, kid-friendly crunch", budget:true},
+  {name:"Whole Wheat Crackers", type:"snack", emoji:"🍘", note:"Good with cheese or hummus", budget:true},
+  {name:"Trail Mix (Nuts & Dried Fruit)", type:"snack", emoji:"🥜", note:"No added sugar, protein-rich"},
+  {name:"Multigrain Rusk", type:"snack", emoji:"🍞", note:"Pairs well with milk", budget:true},
+  {name:"Ragi Cookies", type:"snack", emoji:"🍪", note:"Iron-rich, no maida", budget:true},
+  {name:"Roasted Chana", type:"snack", emoji:"🫘", note:"High protein, low oil", budget:true},
+  {name:"No-added-sugar Granola Bars", type:"snack", emoji:"🍫", note:"Good lunchbox filler"},
+  {name:"Baked Banana Chips", type:"snack", emoji:"🍌", note:"Lightly salted, not deep-fried", budget:true},
+  {name:"Ready Sprouts Chaat Mix", type:"snack", emoji:"🌱", note:"Protein + fibre combo"},
+  {name:"Flavoured Milk (no added sugar)", type:"drink", emoji:"🥛", note:"Calcium for growing kids", budget:true},
+  {name:"100% Fruit Juice (no sugar added)", type:"drink", emoji:"🧃", note:"Check label for 'no added sugar'"},
+  {name:"Packaged Coconut Water", type:"drink", emoji:"🥥", note:"Natural electrolytes"},
+  {name:"Buttermilk / Chaas Mix", type:"drink", emoji:"🥤", note:"Light, good after meals", budget:true},
+  {name:"Almond Milk", type:"drink", emoji:"🌰", note:"Good dairy-free option"},
+  {name:"Kids' Protein Milk Shake Mix", type:"drink", emoji:"🍶", note:"For active or picky eaters"},
+];

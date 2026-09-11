@@ -28,6 +28,71 @@ function shopLinkProduct(productName){
   const q = encodeURIComponent(productName);
   return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}`;
 }
+function shopLinkBestPrice(productName){
+  // Same search, but sorted cheapest-first so the top result is the best deal.
+  const q = encodeURIComponent(productName);
+  return `https://www.${CONFIG.amazonDomain}/s?k=${q}&tag=${CONFIG.amazonTag}&s=price-asc-rank`;
+}
+
+// ---------------- LIVE CLOCK ----------------
+function tickClock(){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  const timeStr = now.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const dEl = document.getElementById('liveDate');
+  const tEl = document.getElementById('liveTime');
+  if(dEl) dEl.textContent = dateStr;
+  if(tEl) tEl.textContent = timeStr;
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+// ---------------- TAB BAR (Meal Schedule / Kids) ----------------
+function showTab(tab){
+  const scheduleView = document.getElementById('scheduleView');
+  const kidsView = document.getElementById('kidsView');
+  const tabSchedule = document.getElementById('tabSchedule');
+  const tabKids = document.getElementById('tabKids');
+  const floatingBar = document.getElementById('floatingActionBar');
+  if(tab === 'kids'){
+    scheduleView.style.display = 'none';
+    kidsView.style.display = 'block';
+    tabSchedule.classList.remove('active');
+    tabKids.classList.add('active');
+    floatingBar.classList.add('hidden');
+  } else {
+    scheduleView.style.display = '';
+    kidsView.style.display = 'none';
+    tabSchedule.classList.add('active');
+    tabKids.classList.remove('active');
+    if(lastWeeks) floatingBar.classList.remove('hidden');
+  }
+}
+document.getElementById('tabSchedule').addEventListener('click', ()=>showTab('schedule'));
+document.getElementById('tabKids').addEventListener('click', ()=>showTab('kids'));
+
+// ---------------- KIDS' SNACKS & DRINKS (best-price) ----------------
+function renderKidsSection(){
+  const wrap = document.getElementById('kidsView');
+  const cards = KID_ITEMS.map(item => `
+    <div class="kid-card">
+      <span class="kid-emoji">${item.emoji}</span>
+      <p class="kid-name">${item.name}</p>
+      <p class="kid-note">${item.note}</p>
+      <div class="kid-tags">
+        <span class="tag ${item.type==='drink' ? 'drink':'snack'}">${item.type==='drink' ? 'Drink':'Snack'}</span>
+        ${item.budget ? '<span class="tag budget">💰 Budget pick</span>' : ''}
+      </div>
+      <a class="buy-btn best-price" href="${shopLinkBestPrice(item.name)}" target="_blank" rel="noopener sponsored" title="Cheapest listings for ${item.name} on Amazon">💰 Best Price</a>
+    </div>`).join('');
+  wrap.innerHTML = `
+    <div class="kids-wrap">
+      <div class="kids-head"><span class="kids-title">Kids' Snacks &amp; Drinks</span><hr></div>
+      <p class="kids-sub">A separate healthy pick list for tiffin boxes and after-school snacks — every button is sorted to the cheapest listing first, so you always land on the best deal.</p>
+      <div class="kids-grid">${cards}</div>
+    </div>`;
+}
+renderKidsSection();
 
 // ---------------- TOAST ----------------
 let toastTimer = null;
