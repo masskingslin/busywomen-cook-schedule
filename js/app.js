@@ -150,8 +150,9 @@ wirePillGroup('dietFilter', val => state.diet = val);
 wirePillGroup('effortFilter', val => state.maxEffort = parseInt(val, 10));
 wirePillGroup('portionFilter', val => state.portion = parseInt(val, 10));
 
-document.getElementById('quickTimeOnly').addEventListener('change', e=>{
-  state.quickOnly = e.target.checked;
+document.querySelector('#quickOnlyFilter .pill').addEventListener('click', e=>{
+  state.quickOnly = !state.quickOnly;
+  e.target.classList.toggle('active', state.quickOnly);
 });
 
 ['breakfast','lunch','dinner'].forEach(meal=>{
@@ -165,7 +166,7 @@ document.getElementById('resetPreferencesBtn').addEventListener('click', ()=>{
   document.querySelectorAll('#dietFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='all'));
   document.querySelectorAll('#effortFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='3'));
   document.querySelectorAll('#portionFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='2'));
-  document.getElementById('quickTimeOnly').checked = false;
+  document.querySelector('#quickOnlyFilter .pill').classList.remove('active');
   document.getElementById('breakfastTime').value = "08:00";
   document.getElementById('lunchTime').value = "13:00";
   document.getElementById('dinnerTime').value = "20:00";
