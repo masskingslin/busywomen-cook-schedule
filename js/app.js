@@ -94,6 +94,33 @@ function renderKidsSection(){
 }
 renderKidsSection();
 
+// ---------------- THEME CUSTOMIZATION ----------------
+const THEMES = {
+  teal:  { '--teal-deep':'#123B3A', '--teal-mid':'#1B5450', '--teal-line':'#2B6864', '--cream':'#FBF3E4', '--turmeric':'#E7A72C', '--chili':'#C1442D', '--leaf':'#5B8C5A', '--ink':'#1B1B16', '--ink-soft':'#5A5A50', '--white':'#FFFDF8' },
+  berry: { '--teal-deep':'#3B1224', '--teal-mid':'#5C1B38', '--teal-line':'#7A2048', '--cream':'#FBF0E9', '--turmeric':'#E0A458', '--chili':'#C1442D', '--leaf':'#8C5A6E', '--ink':'#241315', '--ink-soft':'#6B4A52', '--white':'#FFFCF9' },
+  ocean: { '--teal-deep':'#0B2E3A', '--teal-mid':'#0F4C5C', '--teal-line':'#1B6E80', '--cream':'#EFF7F6', '--turmeric':'#4FB6A6', '--chili':'#E0703E', '--leaf':'#2E8B7A', '--ink':'#132226', '--ink-soft':'#4A6167', '--white':'#FFFFFF' },
+};
+function applyTheme(name){
+  const t = THEMES[name] || THEMES.teal;
+  Object.entries(t).forEach(([k,v]) => document.documentElement.style.setProperty(k, v));
+  document.querySelectorAll('.theme-swatch').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.theme === name);
+  });
+}
+document.querySelectorAll('.theme-swatch').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const name = btn.dataset.theme;
+    applyTheme(name);
+    try{ await window.storage.set('theme-pref', name); }catch(e){ /* ignore */ }
+  });
+});
+(async function loadTheme(){
+  try{
+    const res = await window.storage.get('theme-pref');
+    applyTheme(res && res.value ? res.value : 'teal');
+  }catch(e){ applyTheme('teal'); }
+})();
+
 // ---------------- TOAST ----------------
 let toastTimer = null;
 function showToast(message){
@@ -359,8 +386,14 @@ document.getElementById('openGroceryBtn').addEventListener('click', renderGrocer
 document.getElementById('copyGroceryBtn').addEventListener('click', ()=>{
   if(!lastWeeks) return;
   const items = aggregateGroceries(lastWeeks, state.portion);
-  const text = "Busywomen Cook Schedule — Grocery List\n" +
-    items.map(i => `• ${i.name} — ${roundQty(i.qty)} ${i.unit}`).join("\n");
+  const text = [
+    ...brandHeaderLines(),
+    "",
+    `🛒 Grocery List — scaled for ${state.portion} ${state.portion===1?'person':'people'}`,
+    "",
+    ...items.map(i => `• ${i.name} — ${roundQty(i.qty)} ${i.unit}`),
+    ...brandFooterLines(),
+  ].join("\n");
   navigator.clipboard.writeText(text).then(()=>{
     showToast("Grocery list copied to clipboard!");
   }).catch(()=>{
@@ -420,17 +453,48 @@ function renderPrepList(){
 }
 document.getElementById('openPrepBtn').addEventListener('click', renderPrepList);
 
+// ---------------- BRANDING (auto letterhead + description) ----------------
+function brandHeaderLines(){
+  return [
+    "🍽️ *Busywomen Cook Schedule*",
+    "Plan once, cook all month · zero repeats per week",
+  ];
+}
+function brandFooterLines(){
+  return [
+    "",
+    "As an Amazon Associate, this app earns from qualifying purchases.",
+  ];
+}
+function autoDescribeDay(today){
+  // Auto-generated one-line description from that day's ingredients.
+  const names = new Set();
+  ['breakfast','lunch','dinner'].forEach(m=>{
+    const dish = today[m];
+    if(dish && dish.ingredients){
+      dish.ingredients.forEach(i => names.add(i.name));
+    }
+  });
+  const list = [...names].slice(0, 6);
+  if(!list.length) return '';
+  return `🧾 Today needs: ${list.join(", ")}${names.size>6 ? ', ...' : ''}`;
+}
+
 // ---------------- WHATSAPP SHARE ----------------
 document.getElementById('shareWhatsAppBtn').addEventListener('click', ()=>{
   if(!lastWeeks){ showToast("Generate a schedule first"); return; }
   const info = getTodayInfo();
   const today = lastWeeks[info.weekIndex][info.dayIndex];
+  const desc = autoDescribeDay(today);
   const lines = [
-    "🍽️ Busywomen Cook Schedule",
+    ...brandHeaderLines(),
+    "",
     `${today.day}'s plan:`,
     `🍳 Breakfast: ${today.breakfast ? today.breakfast.name : '-'}`,
     `🍛 Lunch: ${today.lunch ? today.lunch.name : '-'}`,
     `🍲 Dinner: ${today.dinner ? today.dinner.name : '-'}`,
+    ...(desc ? ["", desc] : []),
+    ...brandFooterLines(),
   ];
   const url = "https://wa.me/?text=" + encodeURIComponent(lines.join("\n"));
   window.open(url, "_blank", "noopener");
