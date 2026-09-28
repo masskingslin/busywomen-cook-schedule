@@ -7,12 +7,115 @@
 
 const CONFIG = {
   amazonTag: "kingcloud-21",
-  amazonDomain: "amazon.in"
+  amazonDomain: "amazon.in",
+  // Feedback address is stored encoded so it is not sitting in plain text in the source.
+  feedbackEmailB64: "bWFzc2tpbmdzbGluQHlhaG9vLmNvbQ==",
+  // Optional but recommended: a free Web3Forms access key (web3forms.com). When set, feedback is
+  // delivered to your inbox WITHOUT ever exposing your email address to visitors.
+  web3formsKey: "",
+  gaMeasurementId: "G-XXXXXXXXXX"
 };
 
 const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const CAT_LABEL = { "veg":"Veg", "non-veg":"Non-veg", "south-indian":"South Indian" };
 const PEPPER = { 1:"🌶", 2:"🌶🌶", 3:"🌶🌶🌶" };
+
+// ---------------- GROCERY PACK CATALOG ----------------
+// Maps each ingredient (by exact name, as used above) to the smallest realistic
+// Amazon pantry/grocery pack for it. "perPack" is expressed in the ingredient's
+// own recipe unit (cup/tbsp/tsp/g/pcs/leaves/slices) so the grocery list can do
+// packsNeeded = ceil(totalRecipeQty / perPack) without any further conversion.
+// This is what lets "you need 2.3 cups of rice" become "buy 1 × 1 kg pack".
+const PACK_CATALOG = {
+  // ---- staples sold by weight, measured in cups (grams-per-cup baked into perPack) ----
+  "Basmati rice":            { perPack: 5,    label: "1 kg pack" },
+  "Toor dal":                { perPack: 5,    label: "1 kg pack" },
+  "Urad dal":                { perPack: 5,    label: "1 kg pack" },
+  "Moong dal":               { perPack: 5,    label: "1 kg pack" },
+  "Rajma (kidney beans)":    { perPack: 5,    label: "1 kg pack" },
+  "Kabuli chana (chickpeas)":{ perPack: 5.25, label: "1 kg pack" },
+  "Mixed dals":              { perPack: 5,    label: "1 kg pack" },
+  "Mixed lentils (adai mix)":{ perPack: 5,    label: "1 kg pack" },
+  "Idli rice":               { perPack: 5,    label: "1 kg pack" },
+  "Dosa rice":               { perPack: 5,    label: "1 kg pack" },
+  "Raw rice":                { perPack: 5,    label: "1 kg pack" },
+  "Whole wheat atta":        { perPack: 8.3,  label: "1 kg pack" },
+  "Maida flour":             { perPack: 8.3,  label: "1 kg pack" },
+  "Besan (gram flour)":      { perPack: 4.2,  label: "500 g pack" },
+  "Broken wheat daliya":     { perPack: 2.8,  label: "500 g pack" },
+  "Rava (semolina)":         { perPack: 6.25, label: "1 kg pack" },
+  "Poha (flattened rice)":   { perPack: 10,   label: "500 g pack" },
+  "Rice flour (appam)":      { perPack: 3.3,  label: "500 g pack" },
+  "Rice flour (idiyappam)":  { perPack: 3.3,  label: "500 g pack" },
+  "Rice flour coating":      { perPack: 3.3,  label: "500 g pack" },
+  "Naan flour mix":          { perPack: 4.2,  label: "500 g pack" },
+  "Dosa batter mix":         { perPack: 4.2,  label: "1 kg tetra pack" },
+  "Mixed vegetables":        { perPack: 3.3,  label: "500 g pack" },
+  "Coconut":                 { perPack: 2.5,  label: "200 g frozen grated pack" },
+  "Coconut milk":            { perPack: 1.67, label: "400 ml tetra pack" },
+  "Chicken stock":           { perPack: 4.2,  label: "1 L tetra pack" },
+  "Curd":                    { perPack: 1.6,  label: "400 g cup" },
+  "Tomato puree":            { perPack: 0.82, label: "200 g tetra pack" },
+  "Onion tomato masala":     { perPack: 1,    label: "250 g pack" },
+  "Salad greens":            { perPack: 2.5,  label: "100 g pack" },
+
+  // ---- spice powders / masalas / pastes, measured in tbsp ----
+  "Biryani masala":          { perPack: 6.7,  label: "100 g pack" },
+  "Bisi bele bath powder":   { perPack: 13.3, label: "200 g pack" },
+  "Chettinad masala":        { perPack: 6.7,  label: "100 g pack" },
+  "Chole masala":            { perPack: 6.7,  label: "100 g pack" },
+  "Rasam powder":            { perPack: 13.3, label: "200 g pack" },
+  "Sambar powder":           { perPack: 13.3, label: "200 g pack" },
+  "Spice masala":            { perPack: 6.7,  label: "100 g pack" },
+  "Butter":                  { perPack: 7.1,  label: "100 g pack" },
+  "Fresh cream":             { perPack: 13.3, label: "200 ml pack" },
+  "Ghee":                    { perPack: 33.3, label: "500 g jar" },
+  "Ginger":                  { perPack: 13.3, label: "200 g pack" },
+  "Ginger garlic paste":     { perPack: 13.3, label: "200 g jar" },
+  "Mayonnaise":              { perPack: 16.7, label: "250 g jar" },
+  "Olive oil":               { perPack: 35.7, label: "500 ml bottle" },
+  "Peanuts":                 { perPack: 20,   label: "200 g pack" },
+  "Soy sauce":               { perPack: 13.3, label: "200 ml bottle" },
+  "Tamarind":                { perPack: 13.3, label: "200 g pack" },
+
+  // ---- small-quantity spices, measured in tsp ----
+  "Black pepper":            { perPack: 20,   label: "100 g pack" },
+  "Cumin seeds":             { perPack: 20,   label: "100 g pack" },
+  "Fenugreek seeds":         { perPack: 20,   label: "100 g pack" },
+  "Garam masala":            { perPack: 20,   label: "100 g pack" },
+  "Mustard seeds":           { perPack: 20,   label: "100 g pack" },
+  "Whole garam masala":      { perPack: 20,   label: "100 g pack" },
+
+  // ---- meat / seafood / paneer, already measured in grams ----
+  "Chicken":                 { perPack: 500,  label: "500 g pack" },
+  "Chicken breast":          { perPack: 500,  label: "500 g pack" },
+  "Chicken curry cut":       { perPack: 500,  label: "500 g pack" },
+  "Chicken pieces":          { perPack: 500,  label: "500 g pack" },
+  "Minced mutton keema":     { perPack: 500,  label: "500 g pack" },
+  "Mutton curry cut":        { perPack: 500,  label: "500 g pack" },
+  "Fish fillet":             { perPack: 500,  label: "500 g pack" },
+  "Prawns":                  { perPack: 500,  label: "500 g pack" },
+  "Paneer":                  { perPack: 200,  label: "200 g pack" },
+  "Spinach":                 { perPack: 250,  label: "250 g bunch/pack" },
+
+  // ---- produce sold by weight, measured in pcs (grams-per-piece baked in) ----
+  "Onion":                   { perPack: 6.7,  label: "1 kg bag" },
+  "Potatoes":                { perPack: 6.7,  label: "1 kg bag" },
+  "Tomato":                  { perPack: 4.2,  label: "500 g pack" },
+  "Capsicum":                { perPack: 3.3,  label: "500 g pack" },
+  "Brinjal (eggplant)":      { perPack: 2.8,  label: "500 g pack" },
+  "Green chilli":            { perPack: 12.5, label: "100 g pack" },
+  "Lemon":                   { perPack: 5,    label: "250 g pack (≈5 pcs)" },
+
+  // ---- count-based packs (no weight conversion — sold as a fixed count) ----
+  "Eggs":                    { perPack: 6,    label: "tray of 6" },
+  "Chicken sausages":        { perPack: 6,    label: "pack of 6" },
+  "Tortilla wrap":           { perPack: 6,    label: "pack of 6" },
+  "Vegetable stock cube":    { perPack: 6,    label: "pack of 6" },
+  "Bread loaf":              { perPack: 12,   label: "1 loaf (≈12 slices)" },
+  "Curry leaves":            { perPack: 20,   label: "1 bunch" },
+  "Lettuce":                 { perPack: 10,   label: "1 pack" },
+};
 
 const DISHES = [
   // ---------------- BREAKFAST — VEG ----------------
@@ -158,6 +261,80 @@ const DISHES = [
     {name:"Urad dal", qty:1, unit:"cup"},{name:"Curd", qty:1, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
   {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", effort:1, time:20, ingredients:[
     {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
+
+  // ---------------- MORE DISHES ----------------
+  {name:"Suji Chilla", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Bread Upma", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Bread loaf", qty:6, unit:"slices"},{name:"Onion", qty:1, unit:"pcs"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Methi Thepla", meal:"breakfast", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Besan (gram flour)", qty:0.25, unit:"cup"},{name:"Cumin seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Aloo Sandwich", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
+    {name:"Bread loaf", qty:6, unit:"slices"},{name:"Potatoes", qty:2, unit:"pcs"},{name:"Butter", qty:2, unit:"tbsp"}]},
+  {name:"Masala Omelette Roll", meal:"breakfast", category:"non-veg", effort:1, time:15, ingredients:[
+    {name:"Eggs", qty:3, unit:"pcs"},{name:"Whole wheat atta", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
+  {name:"Egg Sandwich", meal:"breakfast", category:"non-veg", effort:1, time:10, ingredients:[
+    {name:"Eggs", qty:3, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Butter", qty:1, unit:"tbsp"}]},
+  {name:"Keema Egg Toast", meal:"breakfast", category:"non-veg", effort:2, time:25, ingredients:[
+    {name:"Minced mutton keema", qty:200, unit:"g"},{name:"Eggs", qty:2, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"}]},
+  {name:"Tomato Dosa", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Dosa rice", qty:1, unit:"cup"},{name:"Tomato", qty:2, unit:"pcs"},{name:"Urad dal", qty:0.25, unit:"cup"}]},
+  {name:"Onion Uttapam", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Onion", qty:2, unit:"pcs"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Pesarattu", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Moong dal", qty:1, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"},{name:"Ginger", qty:1, unit:"tbsp"}]},
+  {name:"Rava Dosa", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Rice flour (appam)", qty:0.5, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"}]},
+  {name:"Jeera Rice & Dal Fry", meal:"lunch", category:"veg", effort:1, time:30, ingredients:[
+    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Moong dal", qty:0.5, unit:"cup"},{name:"Cumin seeds", qty:1, unit:"tsp"}]},
+  {name:"Matar Paneer & Roti", meal:"lunch", category:"veg", effort:2, time:35, ingredients:[
+    {name:"Paneer", qty:200, unit:"g"},{name:"Tomato", qty:2, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Vegetable Biryani", meal:"lunch", category:"veg", effort:3, time:50, ingredients:[
+    {name:"Basmati rice", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Biryani masala", qty:2, unit:"tbsp"}]},
+  {name:"Chana Masala & Rice", meal:"lunch", category:"veg", effort:2, time:40, ingredients:[
+    {name:"Kabuli chana (chickpeas)", qty:1, unit:"cup"},{name:"Chole masala", qty:1, unit:"tbsp"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
+  {name:"Aloo Jeera & Roti", meal:"lunch", category:"veg", effort:1, time:25, ingredients:[
+    {name:"Potatoes", qty:3, unit:"pcs"},{name:"Cumin seeds", qty:1, unit:"tsp"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Chicken Pulao", meal:"lunch", category:"non-veg", effort:2, time:40, ingredients:[
+    {name:"Chicken curry cut", qty:400, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Garam masala", qty:1, unit:"tsp"}]},
+  {name:"Egg Biryani", meal:"lunch", category:"non-veg", effort:2, time:40, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Basmati rice", qty:2, unit:"cup"},{name:"Biryani masala", qty:2, unit:"tbsp"}]},
+  {name:"Keema Rice", meal:"lunch", category:"non-veg", effort:2, time:35, ingredients:[
+    {name:"Minced mutton keema", qty:300, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
+  {name:"Chicken Kadai & Roti", meal:"lunch", category:"non-veg", effort:3, time:45, ingredients:[
+    {name:"Chicken curry cut", qty:500, unit:"g"},{name:"Capsicum", qty:2, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Tamarind Rice (Puliyogare)", meal:"lunch", category:"south-indian", effort:2, time:30, ingredients:[
+    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Tamarind", qty:2, unit:"tbsp"},{name:"Peanuts", qty:2, unit:"tbsp"}]},
+  {name:"Coconut Rice", meal:"lunch", category:"south-indian", effort:1, time:20, ingredients:[
+    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Coconut", qty:0.5, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
+  {name:"Tomato Rice", meal:"lunch", category:"south-indian", effort:1, time:25, ingredients:[
+    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Tomato", qty:3, unit:"pcs"},{name:"Curry leaves", qty:8, unit:"leaves"}]},
+  {name:"Kerala Egg Curry & Rice", meal:"lunch", category:"south-indian", effort:2, time:35, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Coconut milk", qty:0.5, unit:"cup"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
+  {name:"Veg Pulao & Raita", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Mixed vegetables", qty:1.5, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"}]},
+  {name:"Paneer Bhurji & Roti", meal:"dinner", category:"veg", effort:1, time:25, ingredients:[
+    {name:"Paneer", qty:200, unit:"g"},{name:"Onion", qty:1, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
+  {name:"Tomato Soup & Toast", meal:"dinner", category:"veg", effort:1, time:20, ingredients:[
+    {name:"Tomato", qty:4, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Butter", qty:1, unit:"tbsp"}]},
+  {name:"Dal Palak & Rice", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
+    {name:"Toor dal", qty:0.5, unit:"cup"},{name:"Spinach", qty:250, unit:"g"},{name:"Basmati rice", qty:1, unit:"cup"}]},
+  {name:"Chicken Fried Rice", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
+    {name:"Chicken breast", qty:200, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Soy sauce", qty:1, unit:"tbsp"}]},
+  {name:"Chicken Tikka & Salad", meal:"dinner", category:"non-veg", effort:2, time:35, ingredients:[
+    {name:"Chicken breast", qty:300, unit:"g"},{name:"Curd", qty:0.5, unit:"cup"},{name:"Salad greens", qty:2, unit:"cup"}]},
+  {name:"Fish Masala Fry & Roti", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
+    {name:"Fish fillet", qty:400, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"}]},
+  {name:"Keema Matar & Roti", meal:"dinner", category:"non-veg", effort:2, time:40, ingredients:[
+    {name:"Minced mutton keema", qty:300, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
+  {name:"Podi Idli", meal:"dinner", category:"south-indian", effort:2, time:25, ingredients:[
+    {name:"Idli rice", qty:1, unit:"cup"},{name:"Urad dal", qty:0.25, unit:"cup"},{name:"Sambar powder", qty:1, unit:"tbsp"}]},
+  {name:"Kerala Egg Roast & Appam", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
+    {name:"Eggs", qty:4, unit:"pcs"},{name:"Onion", qty:2, unit:"pcs"},{name:"Rice flour (appam)", qty:1, unit:"cup"}]},
+  {name:"Vegetable Pongal", meal:"dinner", category:"south-indian", effort:1, time:25, ingredients:[
+    {name:"Raw rice", qty:1, unit:"cup"},{name:"Moong dal", qty:0.5, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"}]},
+  {name:"Fish Moilee & Rice", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
+    {name:"Fish fillet", qty:400, unit:"g"},{name:"Coconut milk", qty:1, unit:"cup"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
 
   // ---------------- READY-MADE / INSTANT (store-bought, quick) ----------------
   {name:"Instant Poha Mix", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Instant Poha Mix", qty:1, unit:"pack"}]},
