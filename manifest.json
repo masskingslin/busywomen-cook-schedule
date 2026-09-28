@@ -1,0 +1,16 @@
+{
+  "name": "Busywomen Cook Schedule",
+  "short_name": "Cook Schedule",
+  "description": "Build your custom monthly meal plan — veg, non-veg, or South Indian — with grocery lists, prep guides, and phone alarms.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6EFDD",
+  "theme_color": "#1B5450",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

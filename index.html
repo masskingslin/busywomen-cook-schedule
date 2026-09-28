@@ -25,6 +25,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- PWA: installable on Android/iOS -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1B5450" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cook Schedule" />
 </head>
 <body>
   <div class="app-container">
@@ -53,7 +63,10 @@
         <button type="button" class="theme-swatch active" data-theme="teal" style="background:#1B5450" aria-label="Teal & Turmeric theme"></button>
         <button type="button" class="theme-swatch" data-theme="berry" style="background:#5C1B38" aria-label="Berry & Rose theme"></button>
         <button type="button" class="theme-swatch" data-theme="ocean" style="background:#0F4C5C" aria-label="Ocean & Mint theme"></button>
+        <button type="button" class="theme-swatch" data-theme="night" style="background:#0D1413" aria-label="Night (dark) theme"></button>
       </div>
+
+      <button type="button" id="installAppBtn" class="install-app-btn hidden">📲 Install App</button>
     </header>
 
     <div class="tab-bar">
@@ -66,7 +79,13 @@
     <main class="planner-layout" id="scheduleView">
       <!-- Filter & Configuration Controls -->
       <section class="controls-card">
-        <h2>Build your month</h2>
+        <div class="label-header-row">
+          <h2>Build your month</h2>
+          <div class="header-actions">
+            <button type="button" id="openExcludedBtn" class="text-action-btn hidden">🚫 Excluded dishes</button>
+            <button type="button" id="clearSavedPlanBtn" class="text-action-btn hidden">🗑 Clear saved plan</button>
+          </div>
+        </div>
 
         <div class="control-group">
           <label>Food Type</label>
@@ -118,13 +137,44 @@
         </div>
 
         <div class="control-group">
+          <div class="label-header-row">
+            <label>⏰ Phone Alarms (sets a real alarm on your Android)</label>
+          </div>
+          <div class="alarm-row">
+            <div class="alarm-field">
+              <span>🍳 Breakfast</span>
+              <button type="button" class="alarm-set-btn" data-meal="breakfast">Set Alarm</button>
+              <span class="alarm-status" id="alarmStatus-breakfast"></span>
+            </div>
+            <div class="alarm-field">
+              <span>🍛 Lunch</span>
+              <button type="button" class="alarm-set-btn" data-meal="lunch">Set Alarm</button>
+              <span class="alarm-status" id="alarmStatus-lunch"></span>
+            </div>
+            <div class="alarm-field">
+              <span>🍲 Dinner</span>
+              <button type="button" class="alarm-set-btn" data-meal="dinner">Set Alarm</button>
+              <span class="alarm-status" id="alarmStatus-dinner"></span>
+            </div>
+          </div>
+          <p class="alarm-note">Each button opens your phone's own Clock app with the meal time and label already filled in — works on Samsung, Xiaomi, stock Android, etc. There's no "reset" here: Android doesn't let any website cancel or edit an alarm once it's in the Clock app, for security reasons — only the Clock app itself can remove it, so that's the one honest way.</p>
+        </div>
+
+        <div class="control-group">
           <div class="pill-selector" id="quickOnlyFilter">
             <button type="button" class="pill" data-value="quick">Quick only (≤20 min)</button>
           </div>
         </div>
 
+
         <button id="generateBtn" class="primary-btn">Generate Month Schedule</button>
       </section>
+
+      <!-- Plan toolbar: search dishes + jump to today -->
+      <div id="planToolbar" class="plan-toolbar hidden">
+        <input type="search" id="planSearch" placeholder="🔍 Find a dish in your plan (e.g. biryani)" aria-label="Search dishes in your plan" />
+        <button type="button" id="jumpTodayBtn" class="jump-today-btn">📍 Today</button>
+      </div>
 
       <!-- Schedule Results -->
       <section id="scheduleOutput" class="schedule-section">
@@ -144,6 +194,15 @@
       </button>
       <button id="shareWhatsAppBtn" class="action-btn">
         💬 <span>Share Plan</span>
+      </button>
+      <button id="shareWeekBtn" class="action-btn">
+        📆 <span>Share Week</span>
+      </button>
+      <button id="printPlanBtn" class="action-btn">
+        🖨 <span>Print Plan</span>
+      </button>
+      <button id="openFeedbackBtn" class="action-btn">
+        💌 <span>Feedback</span>
       </button>
       <div class="calendar-export-group">
         <select id="reminderInterval" class="reminder-select" aria-label="Set reminder alert">
@@ -169,7 +228,8 @@
         <p class="modal-sub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
         <div id="groceryListContent" class="grocery-grid"></div>
         <div class="modal-footer">
-          <button id="copyGroceryBtn" class="secondary-btn">📋 Copy to Clipboard</button>
+          <button id="copyGroceryBtn" class="secondary-btn">📋 Copy</button>
+          <button id="printGroceryBtn" class="secondary-btn">🖨 Print</button>
           <button class="primary-btn close-modal" data-target="groceryModal">Done</button>
         </div>
       </div>
@@ -190,6 +250,42 @@
       </div>
     </div>
 
+    <!-- Modal Drawer: Excluded Dishes -->
+    <div id="excludedModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Excluded Dishes</h3>
+          <button class="close-modal" data-target="excludedModal">&times;</button>
+        </div>
+        <p class="modal-sub">These dishes were marked "never show again" and are skipped when building or swapping meals.</p>
+        <div id="excludedListContent" class="excluded-list"></div>
+        <div class="modal-footer">
+          <button class="primary-btn close-modal" data-target="excludedModal">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Drawer: Feedback -->
+    <div id="feedbackModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Send Feedback</h3>
+          <button class="close-modal" data-target="feedbackModal">&times;</button>
+        </div>
+        <p class="modal-sub">Found a bug, missing a dish, or have an idea? Tell us — it goes straight to our inbox.</p>
+        <div class="feedback-form">
+          <label for="feedbackName">Your name (optional)</label>
+          <input type="text" id="feedbackName" placeholder="e.g. Priya" />
+          <label for="feedbackMessage">Your message</label>
+          <textarea id="feedbackMessage" rows="5" placeholder="What's working, what's not, what should we add?"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="copyFeedbackBtn" class="secondary-btn">📋 Copy Message</button>
+          <button id="sendFeedbackBtn" class="primary-btn">✉️ Send Feedback</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification Banner -->
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
@@ -200,6 +296,7 @@
   </div>
 
   <script src="js/data.js"></script>
+  <script src="js/recipes.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
