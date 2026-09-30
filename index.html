@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Busywomen Cook Schedule</title>
   <meta name="description" content="Build your custom monthly meal plan in seconds — veg, non-veg, or South Indian, matched to your effort level and time. Free breakfast, lunch & dinner calendar with grocery lists." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://kingcloud.is-a.dev/busywomen-cook-schedule/" />
 
   <!-- Open Graph / WhatsApp, Facebook, Telegram preview -->
   <meta property="og:type" content="website" />
@@ -35,6 +37,21 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Cook Schedule" />
+
+  <!-- Structured data: helps Google show this as a rich app/tool result -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Busywomen Cook Schedule",
+    "url": "https://kingcloud.is-a.dev/busywomen-cook-schedule/",
+    "description": "Build a custom 4-week meal plan — veg, non-veg, or South Indian — matched to your cooking effort and time, with grocery lists, prep guides, and phone alarms.",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "Android, iOS, Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+    "inLanguage": "en-IN"
+  }
+  </script>
 </head>
 <body>
   <div class="app-container">
@@ -77,6 +94,9 @@
     <div id="kidsView" style="display:none;"></div>
 
     <main class="planner-layout" id="scheduleView">
+
+      <!-- Today at a glance: visible the instant a plan exists, no scrolling needed -->
+      <div id="todayHighlight" class="today-highlight hidden"></div>
       <!-- Filter & Configuration Controls -->
       <section class="controls-card">
         <div class="label-header-row">
@@ -164,6 +184,9 @@
           <div class="pill-selector" id="quickOnlyFilter">
             <button type="button" class="pill" data-value="quick">Quick only (≤20 min)</button>
           </div>
+          <div class="pill-selector" id="budgetOnlyFilter">
+            <button type="button" class="pill" data-value="budget">💰 Budget picks (cheaper half of matching dishes)</button>
+          </div>
         </div>
 
 
@@ -226,8 +249,10 @@
           <button class="close-modal" data-target="groceryModal">&times;</button>
         </div>
         <p class="modal-sub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
+        <p id="groceryTotal" class="grocery-total"></p>
         <div id="groceryListContent" class="grocery-grid"></div>
         <div class="modal-footer">
+          <button id="clearGroceryChecksBtn" class="secondary-btn">↺ Clear ticks</button>
           <button id="copyGroceryBtn" class="secondary-btn">📋 Copy</button>
           <button id="printGroceryBtn" class="secondary-btn">🖨 Print</button>
           <button class="primary-btn close-modal" data-target="groceryModal">Done</button>

@@ -22,14 +22,15 @@ Open `index.html` in any browser, or serve the folder with any static file serve
 - **Filters** — Food type (All / Veg / Non-veg / South Indian), max effort (🌶 Easy / 🌶🌶 Up to Medium / 🌶🌶🌶 Any), family size (1 / 2 / 4 people), and a "Quick only" (≤20 min) toggle. "↺ Reset to defaults" restores everything, including meal times.
 - **Generate Month Schedule** — builds 4 weeks of breakfast/lunch/dinner with zero repeats within any single week, pulling from 122 dishes (99 home-cooked with ingredient lists and short cooking steps, 23 ready-made/instant items).
 - **Two buy buttons per home-cooked dish** — 📦 Ready-made (searches Amazon for a store-bought version) and 🛒 Ingredients (searches using the dish's actual ingredient list, not a generic name search). Ready-made/instant dishes show a single 📦 buy button since there's nothing to source separately.
-- **🛒 Smart Grocery Aggregator** — sums every ingredient across the full 4-week plan, scaled to your selected family size, then converts each total into Amazon pack sizes (e.g. "Buy 8 × 1 kg pack") using `PACK_CATALOG`. Per-item Amazon buy link, Copy and Print options.
+- **🛒 Smart Grocery Aggregator** — sums every ingredient across the full 4-week plan, scaled to your selected family size, then converts each total into Amazon pack sizes (e.g. "Buy 8 × 1 kg pack") using `PACK_CATALOG`, with a rough estimated ₹ cost per item and a total for the month. Items are grouped by aisle (Vegetables, Grains & Pulses, Dairy, Meat, Spices, Pantry, Ready-to-eat) and checkboxes are remembered on the device while you shop, with a Clear ticks button. Per-item Amazon buy link, Copy and Print options.
 - **⚡ Sunday Prep Guide** — looks at the current week's dishes, finds ingredients that repeat across multiple meals, and turns them into a batch-prep checklist (plus smart tips like "batch-cook rice" or "marinate proteins ahead" when relevant).
 - **💬 Share Plan / 📆 Share Week** — opens WhatsApp with today's meals, or the whole current week, pre-filled.
 - **📅 Export .ics** — downloads a calendar file with an event for every meal over the next 28 days, using your chosen meal times and reminder offset (15 min / 30 min / 1 hr / 2 hr before, or none). Import it into Google Calendar, Outlook, or Apple Calendar.
 
 - **🔄 Swap / 🚫 Never again** — change a single meal without regenerating the month; excluded dishes are remembered on the device and can be allowed again.
-- **📖 How to cook** — short method under every dish.
-- **🔍 Find a dish / 📍 Today** — search inside your plan and jump to today.
+- **📖 How to cook** — short method under every dish. Every dish also shows a **💰 ≈ ₹/serving** estimate next to its time badge.
+- **💰 Budget picks** — a toggle next to Quick only that keeps the cheaper half of whatever already matches your diet/effort filters, per meal, so it narrows cost without starving non-veg (naturally pricier) of variety.
+- **📍 Today at a glance** — a card at the very top of the page shows today's three meals the instant a plan exists (generated or restored), with a buy link each and a jump to the full day. **🔍 Find a dish** searches inside your plan.
 - **⏰ Phone alarms** — per-meal buttons that open the Android Clock app pre-filled (websites can't cancel alarms, so there is no reset).
 - **🖨 Print** — fridge-friendly plan or grocery list. **💌 Feedback** — opens the visitor's email app.
 - **📲 Installable + offline** — PWA with a saved plan on the device. Four colour themes including a dark Night theme.
@@ -86,3 +87,10 @@ A plain website can't both open a visitor's email app *and* hide the address. Tw
 - **Recommended:** create a free access key at web3forms.com using your email, paste it into `web3formsKey` in `js/data.js`. Feedback is then sent straight to your inbox and your address is never shown to visitors.
 - **Without a key:** the button falls back to `mailto:`, which shows the address in the visitor's email app. It is stored encoded in the source, but that only deters casual scraping.
 To change the address in fallback mode: `btoa("you@example.com")` in a browser console gives the value for `feedbackEmailB64`.
+
+## SEO
+- `robots.txt` and `sitemap.xml` are set for `https://kingcloud.is-a.dev/busywomen-cook-schedule/`. If you host elsewhere, update the URL in both files, in `index.html` (canonical, og:url, JSON-LD) and in `manifest.json`.
+- The JSON-LD block in `index.html` describes the site as a free WebApplication so Google can show it as a tool result, not just a text link.
+
+## Grocery cost estimates
+Each `PACK_CATALOG` entry in `js/data.js` has a `priceINR` — a rough typical Amazon India price for that pack, based on general knowledge, not a live price feed. The grocery list multiplies this by the packs needed and shows a per-item and monthly total, clearly marked as an estimate. Update `priceINR` values periodically as real prices drift, and treat the total as a ballpark for budgeting, not a checkout quote.

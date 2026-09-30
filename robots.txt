@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kingcloud.is-a.dev/busywomen-cook-schedule/sitemap.xml
