@@ -7,6 +7,7 @@ let state = {
   maxEffort: 3,
   portion: 2,
   quickOnly: false,
+  budgetOnly: false,
   times: { breakfast: "08:00", lunch: "13:00", dinner: "20:00" },
 };
 
@@ -236,6 +237,11 @@ document.querySelector('#quickOnlyFilter .pill').addEventListener('click', e=>{
   e.target.classList.toggle('active', state.quickOnly);
 });
 
+document.querySelector('#budgetOnlyFilter .pill').addEventListener('click', e=>{
+  state.budgetOnly = !state.budgetOnly;
+  e.target.classList.toggle('active', state.budgetOnly);
+});
+
 ['breakfast','lunch','dinner'].forEach(meal=>{
   document.getElementById(meal + 'Time').addEventListener('change', e=>{
     state.times[meal] = e.target.value;
@@ -243,11 +249,12 @@ document.querySelector('#quickOnlyFilter .pill').addEventListener('click', e=>{
 });
 
 document.getElementById('resetPreferencesBtn').addEventListener('click', ()=>{
-  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
+  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, budgetOnly:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
   setPillActive('dietFilter', 'all');
   setPillActive('effortFilter', '3');
   setPillActive('portionFilter', '2');
   document.querySelector('#quickOnlyFilter .pill').classList.remove('active');
+  document.querySelector('#budgetOnlyFilter .pill').classList.remove('active');
   document.getElementById('breakfastTime').value = "08:00";
   document.getElementById('lunchTime').value = "13:00";
   document.getElementById('dinnerTime').value = "20:00";
@@ -332,13 +339,27 @@ function shuffle(arr){
 }
 
 function filteredPool(meal){
-  return DISHES.filter(d=>
+  const base = DISHES.filter(d=>
     d.meal===meal &&
     (state.diet==='all' || d.category===state.diet) &&
     d.effort <= state.maxEffort &&
     (!state.quickOnly || d.time<=20) &&
     !excludedDishes.includes(d.name)
   );
+  return applyBudgetNarrowing(base);
+}
+
+// "Budget picks" keeps the cheaper half of whatever already matched the other
+// filters, per meal — not a fixed ₹ cutoff — so veg, non-veg and south-indian
+// each keep reasonable variety instead of non-veg (naturally pricier) being
+// squeezed down to almost nothing by one global number.
+function applyBudgetNarrowing(pool){
+  if(!state.budgetOnly) return pool;
+  const priced = pool.map(d => ({ d, cost: dishCostPerServing(d) })).filter(x => x.cost !== null);
+  if(priced.length < 4) return pool; // too few priced dishes to safely narrow further
+  priced.sort((a,b) => a.cost - b.cost);
+  const keep = Math.max(4, Math.ceil(priced.length / 2));
+  return priced.slice(0, keep).map(x => x.d);
 }
 
 function pickWeek(pool, prevWeekPicks){
@@ -375,7 +396,7 @@ function generateSchedule(){
 
   if(pools.breakfast.length===0 || pools.lunch.length===0 || pools.dinner.length===0){
     document.getElementById('scheduleOutput').innerHTML =
-      '<div class="empty-state">No dishes match this combination of filters. Try loosening a filter or allowing back an excluded dish.</div>';
+      '<div class="empty-state">No dishes match this combination of filters. Try loosening a filter, turning off Budget picks, or allowing back an excluded dish.</div>';
     document.getElementById('floatingActionBar').classList.add('hidden');
     document.getElementById('planToolbar').classList.add('hidden');
     showToast("No matching dishes — widen your filters");
@@ -405,11 +426,32 @@ function generateSchedule(){
   } else {
     showToast("4-week schedule generated!");
   }
-  trackEvent('generate_schedule', { diet: state.diet, max_effort: state.maxEffort, portion: state.portion, quick_only: state.quickOnly });
+  trackEvent('generate_schedule', { diet: state.diet, max_effort: state.maxEffort, portion: state.portion, quick_only: state.quickOnly, budget_only: state.budgetOnly });
   return weeks;
 }
 
 // ---------------- RENDERING ----------------
+// Per-serving cost estimate for a single dish, used for the 💰 badge on each
+// meal card. Unlike the grocery list (which rounds up to whole packs for a
+// month of shopping), this uses fractional pack pricing since a single dish
+// only ever uses a slice of a pack. Returns null if any ingredient lacks a
+// price, so the badge only appears when the estimate is complete.
+function dishCostPerServing(dish){
+  if(!dish || !dish.ingredients || !dish.ingredients.length) return null;
+  let total = 0;
+  for(const ing of dish.ingredients){
+    const entry = PACK_CATALOG[ing.name];
+    if(!entry || typeof entry.priceINR !== 'number') return null;
+    if(ing.unit === 'pack'){
+      total += ing.qty * entry.priceINR;
+    }else{
+      if(typeof entry.perPack !== 'number') return null;
+      total += (ing.qty / entry.perPack) * entry.priceINR;
+    }
+  }
+  return total / 2; // dish ingredients as written serve 2 people
+}
+
 function dishRowHTML(label, dish, mealKey, wi, di){
   if(!dish) return '';
   const ingredientsPreview = (!dish.readymade && dish.ingredients && dish.ingredients.length)
@@ -447,6 +489,7 @@ function dishRowHTML(label, dish, mealKey, wi, di){
             <span class="tag ${dish.category}">${CAT_LABEL[dish.category]}</span>
             <span class="peppers">${PEPPER[dish.effort]}</span>
             <span class="time-badge">⏱ ${dish.time} min</span>
+            ${(()=>{ const c = dishCostPerServing(dish); return c===null ? '' : `<span class="cost-badge">💰 ≈ ₹${Math.round(c)}/serving</span>`; })()}
           </div>
           ${ingredientsPreview}
           ${howTo}
@@ -455,6 +498,40 @@ function dishRowHTML(label, dish, mealKey, wi, di){
       </div>
       ${buyRow}
     </div>`;
+}
+
+function renderTodayHighlight(weeks){
+  const box = document.getElementById('todayHighlight');
+  const info = getTodayInfo();
+  if(info.weekIndex >= weeks.length){ box.classList.add('hidden'); box.innerHTML = ''; return; }
+  const today = weeks[info.weekIndex][info.dayIndex];
+  if(!today){ box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+  const dateLabel = info.now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+  const meals = [
+    ['breakfast','🍳 Breakfast', today.breakfast],
+    ['lunch','🍛 Lunch', today.lunch],
+    ['dinner','🍲 Dinner', today.dinner],
+  ];
+  const rows = meals.map(([key,label,dish])=>{
+    if(!dish) return '';
+    const isNow = key === info.currentMeal;
+    return `
+      <div class="today-meal-row${isNow ? ' is-now' : ''}">
+        <span class="today-meal-label">${label}${isNow ? ' <b>· now</b>' : ''}</span>
+        <span class="today-meal-name">${dish.name}</span>
+        <a class="buy-btn readymade" href="${dish.readymade ? shopLinkProduct(dish.name) : shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored" data-dish="${dish.name}" data-kind="today" aria-label="Find ${dish.name} on Amazon">🛒</a>
+      </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="today-head">
+      <span>📍 Today — ${dateLabel}</span>
+      <button type="button" id="todaySeeFullBtn" class="text-action-btn">See in full plan ↓</button>
+    </div>
+    ${rows}`;
+  box.classList.remove('hidden');
+  document.getElementById('todaySeeFullBtn').addEventListener('click', ()=> document.getElementById('jumpTodayBtn').click());
 }
 
 function renderSchedule(weeks){
@@ -474,6 +551,7 @@ function renderSchedule(weeks){
     });
   });
   out.innerHTML = html;
+  renderTodayHighlight(weeks);
   document.getElementById('floatingActionBar').classList.remove('hidden');
   document.getElementById('planToolbar').classList.remove('hidden');
   applyPlanFilter();
@@ -551,6 +629,7 @@ function swapMealAt(wi, di, mealKey, { silent } = {}){
 
   savePlanToDevice(lastWeeks);
   applyPlanFilter();
+  renderTodayHighlight(lastWeeks);
   return next;
 }
 
@@ -682,6 +761,7 @@ function restoreSavedPlan(){
   setPillActive('effortFilter', state.maxEffort);
   setPillActive('portionFilter', state.portion);
   document.querySelector('#quickOnlyFilter .pill').classList.toggle('active', !!state.quickOnly);
+  document.querySelector('#budgetOnlyFilter .pill').classList.toggle('active', !!state.budgetOnly);
   document.getElementById('breakfastTime').value = state.times.breakfast;
   document.getElementById('lunchTime').value = state.times.lunch;
   document.getElementById('dinnerTime').value = state.times.dinner;
@@ -760,20 +840,81 @@ function purchaseText(item){
   return p.isReadyPack ? `${p.packs} ${p.label}` : `${p.packs} × ${p.label}`;
 }
 
+// Cost is an estimate only: it multiplies packsNeeded by a rough typical Amazon
+// India price baked into PACK_CATALOG (see js/data.js). Prices vary by seller,
+// brand and date, so this is for a ballpark monthly budget, not a live quote.
+function estimatedCost(item){
+  const entry = PACK_CATALOG[item.name];
+  if(!entry || typeof entry.priceINR !== 'number') return null;
+  const p = getPurchaseInfo(item);
+  const packs = p ? p.packs : 1;
+  return packs * entry.priceINR;
+}
+
+const GROCERY_AISLE_ORDER = ["Vegetables & Produce","Grains & Pulses","Dairy & Paneer","Meat, Fish & Seafood","Spices & Masalas","Pantry, Oils & Sauces","Ready-to-eat / Instant","Other"];
+const GROCERY_CHECKED_KEY = "busywomenCookSchedule.groceryChecked";
+
+function loadGroceryChecked(){
+  try{ return JSON.parse(localStorage.getItem(GROCERY_CHECKED_KEY) || "{}"); }catch(e){ return {}; }
+}
+function saveGroceryChecked(map){
+  try{ localStorage.setItem(GROCERY_CHECKED_KEY, JSON.stringify(map)); }catch(e){}
+}
+
 function renderGroceryList(){
   if(!lastWeeks){ showToast("Generate a schedule first"); return; }
   const items = aggregateGroceries(lastWeeks, state.portion);
   const content = document.getElementById('groceryListContent');
-  content.innerHTML = items.map(item => `
-    <div class="grocery-item">
-      <input type="checkbox" />
-      <span class="g-name">${item.name}<small class="g-need">recipes need ≈ ${roundQty(item.qty)} ${item.unit}</small></span>
-      <span class="g-qty">Buy ${purchaseText(item)}</span>
-      <a class="buy-btn readymade" href="${shopLinkProduct(item.name)}" target="_blank" rel="noopener sponsored" data-dish="${item.name}" data-kind="grocery" aria-label="Find ${item.name} on Amazon">🛒</a>
-    </div>`).join('');
+  const checked = loadGroceryChecked();
+  let total = 0, allPriced = true;
+
+  const byAisle = {};
+  items.forEach(item => {
+    const aisle = (PACK_CATALOG[item.name] && PACK_CATALOG[item.name].aisle) || "Other";
+    (byAisle[aisle] = byAisle[aisle] || []).push(item);
+  });
+
+  content.innerHTML = GROCERY_AISLE_ORDER.filter(a => byAisle[a] && byAisle[a].length).map(aisle => {
+    const rows = byAisle[aisle].map(item => {
+      const cost = estimatedCost(item);
+      if(cost === null) allPriced = false; else total += cost;
+      const costHTML = cost === null ? '' : `<small class="g-cost">≈ ₹${Math.round(cost)}</small>`;
+      const isChecked = !!checked[item.name];
+      return `
+      <div class="grocery-item${isChecked ? ' is-checked' : ''}">
+        <input type="checkbox" data-item="${item.name}" ${isChecked ? 'checked' : ''} />
+        <span class="g-name">${item.name}<small class="g-need">recipes need ≈ ${roundQty(item.qty)} ${item.unit}</small></span>
+        <span class="g-qty">Buy ${purchaseText(item)}${costHTML}</span>
+        <a class="buy-btn readymade" href="${shopLinkProduct(item.name)}" target="_blank" rel="noopener sponsored" data-dish="${item.name}" data-kind="grocery" aria-label="Find ${item.name} on Amazon">🛒</a>
+      </div>`;
+    }).join('');
+    return `<div class="grocery-aisle"><h4 class="grocery-aisle-head">${aisle}</h4>${rows}</div>`;
+  }).join('');
+
+  const totalEl = document.getElementById('groceryTotal');
+  totalEl.innerHTML = `Estimated total: <b>≈ ₹${Math.round(total).toLocaleString('en-IN')}</b> for ${state.portion} ${state.portion===1?'person':'people'} this month${allPriced ? '' : ' (some items unpriced)'} — rough estimate, not live prices`;
   openModal('groceryModal');
 }
 document.getElementById('openGroceryBtn').addEventListener('click', renderGroceryList);
+
+document.getElementById('groceryListContent').addEventListener('change', e=>{
+  const box = e.target.closest('input[type="checkbox"]');
+  if(!box) return;
+  const checked = loadGroceryChecked();
+  if(box.checked) checked[box.dataset.item] = true; else delete checked[box.dataset.item];
+  saveGroceryChecked(checked);
+  box.closest('.grocery-item').classList.toggle('is-checked', box.checked);
+});
+
+document.getElementById('clearGroceryChecksBtn').addEventListener('click', ()=>{
+  saveGroceryChecked({});
+  document.querySelectorAll('#groceryListContent .grocery-item').forEach(row=>{
+    row.classList.remove('is-checked');
+    const box = row.querySelector('input[type="checkbox"]');
+    if(box) box.checked = false;
+  });
+  showToast("Checklist cleared");
+});
 
 // ---------------- PRINT ----------------
 function printWithClass(cls){
@@ -799,12 +940,30 @@ document.getElementById('printGroceryBtn').addEventListener('click', ()=>{
 document.getElementById('copyGroceryBtn').addEventListener('click', ()=>{
   if(!lastWeeks) return;
   const items = aggregateGroceries(lastWeeks, state.portion);
+  let total = 0;
+  items.forEach(i => { const c = estimatedCost(i); if(c !== null) total += c; });
+
+  const byAisle = {};
+  items.forEach(item => {
+    const aisle = (PACK_CATALOG[item.name] && PACK_CATALOG[item.name].aisle) || "Other";
+    (byAisle[aisle] = byAisle[aisle] || []).push(item);
+  });
+  const itemLines = GROCERY_AISLE_ORDER.filter(a => byAisle[a] && byAisle[a].length).flatMap(aisle => [
+    `*${aisle}*`,
+    ...byAisle[aisle].map(i => {
+      const c = estimatedCost(i);
+      return `• ${i.name} — buy ${purchaseText(i)}${c===null?'':' (≈ ₹'+Math.round(c)+')'} (need ≈ ${roundQty(i.qty)} ${i.unit})`;
+    }),
+    ""
+  ]);
+
   const text = [
     ...brandHeaderLines(),
     "",
     `🛒 Grocery List — scaled for ${state.portion} ${state.portion===1?'person':'people'}`,
+    `Estimated total: ≈ ₹${Math.round(total).toLocaleString('en-IN')} (rough estimate, not live prices)`,
     "",
-    ...items.map(i => `• ${i.name} — buy ${purchaseText(i)} (need ≈ ${roundQty(i.qty)} ${i.unit})`),
+    ...itemLines,
     ...brandFooterLines(),
   ].join("\n");
   navigator.clipboard.writeText(text).then(()=>{
