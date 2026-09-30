@@ -158,6 +158,33 @@ body{
 /* ---------------- LAYOUT ---------------- */
 .planner-layout{ padding:0; }
 
+/* ---------------- TODAY AT A GLANCE ---------------- */
+.today-highlight{
+  background:linear-gradient(135deg, var(--turmeric), #d99420);
+  margin:14px 14px 0;
+  border-radius:16px;
+  padding:14px 16px;
+  box-shadow:0 14px 30px rgba(0,0,0,0.25);
+  position:relative; z-index:2;
+}
+.today-highlight.hidden{ display:none; }
+.today-head{
+  display:flex; align-items:center; justify-content:space-between;
+  font-weight:800; font-size:13px; color:var(--teal-deep); margin-bottom:8px;
+}
+.today-head .text-action-btn{ color:var(--teal-deep); text-decoration:underline; }
+.today-meal-row{
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,253,248,0.55);
+  border-radius:10px; padding:7px 10px; margin-bottom:6px;
+}
+.today-meal-row:last-child{ margin-bottom:0; }
+.today-meal-row.is-now{ background:var(--white); box-shadow:0 0 0 2px var(--teal-deep) inset; }
+.today-meal-label{ font-size:11px; font-weight:700; color:var(--teal-deep); white-space:nowrap; }
+.today-meal-label b{ color:var(--chili); }
+.today-meal-name{ flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.today-meal-row .buy-btn{ flex-shrink:0; padding:5px 8px; font-size:12px; }
+
 /* ---------------- CONTROLS CARD ---------------- */
 .controls-card{
   background:var(--cream);
@@ -203,6 +230,7 @@ body{
 .text-action-btn.hidden{ display:none; }
 
 .pill-selector{ display:flex; flex-wrap:wrap; gap:8px; }
+.pill-selector + .pill-selector{ margin-top:8px; }
 .pill{
   border:1.5px solid #D8CBA9;
   background:var(--white);
@@ -425,6 +453,7 @@ body{
 .tag.readymade{ background:rgba(193,68,45,0.15); color:var(--chili); }
 .peppers{ color:var(--chili); font-size:11px; }
 .time-badge{ font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }
+.cost-badge{ font-size:10.5px; font-weight:700; color:var(--leaf); white-space:nowrap; }
 .ingredients-list{ font-size:10.5px; color:var(--ink-soft); margin:5px 0 0; line-height:1.4; }
 
 .buy-row{ display:flex; gap:8px; flex-wrap:wrap; padding-left:72px; }
@@ -514,7 +543,21 @@ body{
 .grocery-item .g-name{ flex:1; font-size:13px; font-weight:600; color:var(--ink); }
 .grocery-item .g-name small.g-need{ display:block; font-size:10.5px; font-weight:500; color:var(--ink-soft); margin-top:2px; }
 .grocery-item .g-qty{ font-size:12px; font-weight:700; color:var(--leaf); text-align:right; max-width:42%; }
+.grocery-item .g-qty small.g-cost{ display:block; font-size:10.5px; font-weight:600; color:var(--turmeric); margin-top:2px; }
 .grocery-item .buy-btn{ flex-shrink:0; }
+.grocery-total{
+  background:var(--teal-mid); color:var(--on-dark);
+  border-radius:10px; padding:9px 12px; margin:0 0 12px;
+  font-size:12.5px; font-weight:600;
+}
+.grocery-total b{ color:var(--turmeric); font-size:14px; }
+.grocery-aisle-head{
+  margin:16px 0 6px; padding-bottom:4px; border-bottom:1.5px solid #D8CBA9;
+  font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; color:var(--heading);
+}
+.grocery-aisle:first-child .grocery-aisle-head{ margin-top:0; }
+.grocery-item.is-checked{ opacity:0.5; }
+.grocery-item.is-checked .g-name{ text-decoration:line-through; }
 .grocery-group-label{
   font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
   color:var(--ink-soft); margin:10px 0 2px;
@@ -550,6 +593,7 @@ body{
 /* ---------------- PRINT (fridge-friendly plan / grocery list) ---------------- */
 @media print{
   .plan-toolbar{ display:none !important; }
+  .today-highlight{ display:none !important; }
   .how-to{ display:none !important; }
   body{ background:#fff !important; color:#000 !important; }
   .hero, .controls-card, .floating-actions, .toast, #kidsView,
