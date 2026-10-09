@@ -14,26 +14,32 @@ let state = {
 let lastWeeks = null; // the 4-week schedule currently on screen
 let excludedDishes = []; // dish names the user never wants suggested again
 
-// ---------------- ANALYTICS (Google Analytics 4, optional) ----------------
-// Only loads if CONFIG.gaMeasurementId has been set to a real ID — stays fully
-// silent (no network call, no tracking) until then.
-function initAnalytics(){
-  if(!CONFIG.gaMeasurementId || CONFIG.gaMeasurementId === "G-XXXXXXXXXX") return;
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = "https://www.googletagmanager.com/gtag/js?id=" + CONFIG.gaMeasurementId;
-  document.head.appendChild(s);
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function(){ window.dataLayer.push(arguments); };
-  window.gtag('js', new Date());
-  window.gtag('config', CONFIG.gaMeasurementId);
+// ---------------- OUR OWN BACKEND (feedback, visitor count, analytics) ----------------
+// Everything below talks to backend/server.py, which we run ourselves — no
+// third-party service. CONFIG.apiBase: "" = backend off, "same-origin" = the
+// backend also serves this page (default), or a full URL such as
+// "https://api.example.com" when the site is hosted somewhere else.
+function apiUrl(path){
+  const base = CONFIG.apiBase;
+  if(!base) return null;
+  return (base === 'same-origin' ? '' : String(base).replace(/\/+$/, '')) + path;
 }
-initAnalytics();
 
+// Anonymous usage events (which products get clicked, which features are
+// used). No cookies, no personal data. Sent as text/plain so the browser
+// needs no CORS preflight, and keepalive so it survives leaving the page.
 function trackEvent(name, params){
-  if(typeof window.gtag === 'function'){
-    window.gtag('event', name, params || {});
-  }
+  const url = apiUrl('/api/event');
+  if(!url) return;
+  try{
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ name, props: params || {} }),
+      keepalive: true,
+      credentials: 'omit',
+    }).catch(()=>{});
+  }catch(e){ /* analytics must never break the app */ }
 }
 
 // Catches every affiliate/product link click across the schedule, grocery
@@ -200,16 +206,36 @@ document.querySelectorAll('.theme-swatch').forEach(btn=>{
 
 // ---------------- TOAST ----------------
 let toastTimer = null;
-function showToast(message){
+// Pass {label, onClick} as a 2nd arg to add a tappable action (e.g. "Undo") to
+// the toast. The action is cleared on every call so a stale handler never
+// lingers into the next unrelated toast.
+function showToast(message, action){
   const el = document.getElementById('toast');
-  el.textContent = message;
+  const msgEl = document.getElementById('toastMessage');
+  const actionBtn = document.getElementById('toastActionBtn');
+  msgEl.textContent = message;
+
+  const newActionBtn = actionBtn.cloneNode(true); // drop any previous listener
+  actionBtn.replaceWith(newActionBtn);
+  if(action && action.label && action.onClick){
+    newActionBtn.textContent = action.label;
+    newActionBtn.classList.remove('hidden');
+    newActionBtn.addEventListener('click', ()=>{
+      action.onClick();
+      el.classList.remove('show');
+      setTimeout(()=> el.classList.add('hidden'), 200);
+    });
+  }else{
+    newActionBtn.classList.add('hidden');
+  }
+
   el.classList.remove('hidden');
   requestAnimationFrame(()=> el.classList.add('show'));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>{
     el.classList.remove('show');
     setTimeout(()=> el.classList.add('hidden'), 200);
-  }, 2400);
+  }, action ? 4500 : 2400);
 }
 
 // ---------------- PILL SELECTORS (single-select groups) ----------------
@@ -258,61 +284,7 @@ document.getElementById('resetPreferencesBtn').addEventListener('click', ()=>{
   document.getElementById('breakfastTime').value = "08:00";
   document.getElementById('lunchTime').value = "13:00";
   document.getElementById('dinnerTime').value = "20:00";
-  resetAlarmButtons();
   showToast("Preferences reset to defaults");
-});
-
-// ---------------- NATIVE PHONE ALARMS ----------------
-const MEAL_LABELS = { breakfast: "Breakfast — time to cook!", lunch: "Lunch — time to cook!", dinner: "Dinner — time to cook!" };
-
-function isAndroidDevice(){
-  return /Android/i.test(navigator.userAgent);
-}
-
-// Opens the phone's own Clock app pre-filled with the given time, using Android's
-// standard SET_ALARM intent. This is the only way a website can reach a native
-// alarm on Android — it works across Samsung, Xiaomi, Pixel, OnePlus, stock, etc.
-// because every Android Clock app is required to handle this intent, but it always
-// hands off to that app rather than silently creating the alarm itself.
-function setAndroidAlarm(hour, minute, label){
-  const intentUrl =
-    "intent://#Intent;action=android.intent.action.SET_ALARM;" +
-    "i.android.intent.extra.alarm.HOUR=" + hour + ";" +
-    "i.android.intent.extra.alarm.MINUTES=" + minute + ";" +
-    "S.android.intent.extra.alarm.MESSAGE=" + encodeURIComponent(label) + ";" +
-    "S.android.intent.extra.alarm.SKIP_UI=false;" +
-    "end";
-  window.location.href = intentUrl;
-}
-
-function resetAlarmButtons(){
-  ['breakfast','lunch','dinner'].forEach(meal=>{
-    const btn = document.querySelector('.alarm-set-btn[data-meal="' + meal + '"]');
-    const status = document.getElementById('alarmStatus-' + meal);
-    if(btn){ btn.classList.remove('is-set'); btn.textContent = 'Set Alarm'; }
-    if(status){ status.textContent = ''; }
-  });
-}
-
-document.querySelectorAll('.alarm-set-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const meal = btn.dataset.meal;
-    const timeValue = document.getElementById(meal + 'Time').value || "08:00";
-    const [hour, minute] = timeValue.split(':').map(Number);
-
-    if(!isAndroidDevice()){
-      showToast("This opens your phone's Clock app — works on Android only. On this device, set " + timeValue + " manually.");
-      return;
-    }
-
-    setAndroidAlarm(hour, minute, MEAL_LABELS[meal]);
-    btn.classList.add('is-set');
-    btn.textContent = 'Set Alarm ✓';
-    const status = document.getElementById('alarmStatus-' + meal);
-    if(status){ status.textContent = 'Opened Clock app for ' + timeValue; }
-    showToast(MEAL_LABELS[meal].split(' —')[0] + " alarm sent to your Clock app for " + timeValue);
-    trackEvent('alarm_set', { meal, time: timeValue });
-  });
 });
 
 // ---------------- TODAY MAPPING ----------------
@@ -452,6 +424,56 @@ function dishCostPerServing(dish){
   return total / 2; // dish ingredients as written serve 2 people
 }
 
+// Same shape as dishCostPerServing but for calories: kcalPerUnit on each
+// PACK_CATALOG entry is the calorie content of ONE recipe-unit of that
+// ingredient (one cup/tbsp/tsp/g/pcs, or one whole pack for ready-made), so
+// this just multiplies by the recipe's quantity and halves for one serving.
+// These are general estimates (e.g. USDA-style averages for home cooking),
+// not a lab analysis of your exact recipe — treat them as a ballpark.
+function dishCaloriesPerServing(dish){
+  if(!dish || !dish.ingredients || !dish.ingredients.length) return null;
+  let total = 0;
+  for(const ing of dish.ingredients){
+    const entry = PACK_CATALOG[ing.name];
+    if(!entry || typeof entry.kcalPerUnit !== 'number') return null;
+    total += ing.qty * entry.kcalPerUnit;
+  }
+  return total / 2;
+}
+
+// Sums the three per-serving badges for one day. Each badge is already a
+// fixed "per 1 person" figure, so adding breakfast+lunch+dinner directly
+// gives that day's per-person total — no portion scaling needed here.
+// Keeps a day-card's header total badge in sync after a swap changes one of
+// its meals, without re-rendering the whole day (which would lose scroll
+// position and any other day's state).
+function refreshDayTotalsBadge(wi, di){
+  const card = document.getElementById(`day-${wi}-${di}`);
+  if(!card) return;
+  const titleEl = card.querySelector('.day-title');
+  const existing = titleEl.querySelector('.day-totals');
+  const totals = dayTotals(lastWeeks[wi][di]);
+  const html = (totals && totals.complete)
+    ? `<span class="day-totals">🔥 ≈ ${Math.round(totals.kcal/10)*10} kcal · 💰 ≈ ₹${Math.round(totals.cost)}</span>`
+    : '';
+  if(existing) existing.outerHTML = html;
+  else if(html) titleEl.insertAdjacentHTML('beforeend', html);
+}
+
+function dayTotals(day){
+  const meals = [day.breakfast, day.lunch, day.dinner].filter(Boolean);
+  if(!meals.length) return null;
+  let kcal = 0, cost = 0, complete = true;
+  meals.forEach(dish => {
+    const k = dishCaloriesPerServing(dish);
+    const c = dishCostPerServing(dish);
+    if(k === null || c === null) complete = false;
+    kcal += k || 0;
+    cost += c || 0;
+  });
+  return { kcal, cost, complete };
+}
+
 function dishRowHTML(label, dish, mealKey, wi, di){
   if(!dish) return '';
   const ingredientsPreview = (!dish.readymade && dish.ingredients && dish.ingredients.length)
@@ -490,6 +512,7 @@ function dishRowHTML(label, dish, mealKey, wi, di){
             <span class="peppers">${PEPPER[dish.effort]}</span>
             <span class="time-badge">⏱ ${dish.time} min</span>
             ${(()=>{ const c = dishCostPerServing(dish); return c===null ? '' : `<span class="cost-badge">💰 ≈ ₹${Math.round(c)}/serving</span>`; })()}
+            ${(()=>{ const k = dishCaloriesPerServing(dish); return k===null ? '' : `<span class="kcal-badge">🔥 ≈ ${Math.round(k/10)*10} kcal</span>`; })()}
           </div>
           ${ingredientsPreview}
           ${howTo}
@@ -524,11 +547,17 @@ function renderTodayHighlight(weeks){
       </div>`;
   }).join('');
 
+  const totals = dayTotals(today);
+  const totalsHTML = (totals && totals.complete)
+    ? `<span class="today-totals">🔥 ≈ ${Math.round(totals.kcal/10)*10} kcal · 💰 ≈ ₹${Math.round(totals.cost)}</span>`
+    : '';
+
   box.innerHTML = `
     <div class="today-head">
       <span>📍 Today — ${dateLabel}</span>
       <button type="button" id="todaySeeFullBtn" class="text-action-btn">See in full plan ↓</button>
     </div>
+    ${totalsHTML}
     ${rows}`;
   box.classList.remove('hidden');
   document.getElementById('todaySeeFullBtn').addEventListener('click', ()=> document.getElementById('jumpTodayBtn').click());
@@ -542,8 +571,12 @@ function renderSchedule(weeks){
     html += `<div class="week-head"><span class="wk-num">Week ${wi+1}</span><span class="wk-label">7 days &middot; no repeats</span><hr></div>`;
     days.forEach((d, di)=>{
       const isToday = wi===info.weekIndex && di===info.dayIndex;
-      html += `<div class="day-card${isToday ? ' is-today':''}">
-        <div class="day-title">${d.day}</div>
+      const totals = dayTotals(d);
+      const totalsHTML = (totals && totals.complete)
+        ? `<span class="day-totals">🔥 ≈ ${Math.round(totals.kcal/10)*10} kcal · 💰 ≈ ₹${Math.round(totals.cost)}</span>`
+        : '';
+      html += `<div class="day-card${isToday ? ' is-today':''}" id="day-${wi}-${di}">
+        <div class="day-title"><span>${d.day}</span>${totalsHTML}</div>
         ${dishRowHTML('Breakfast', d.breakfast, 'breakfast', wi, di)}
         ${dishRowHTML('Lunch', d.lunch, 'lunch', wi, di)}
         ${dishRowHTML('Dinner', d.dinner, 'dinner', wi, di)}
@@ -611,15 +644,21 @@ document.getElementById('jumpTodayBtn').addEventListener('click', ()=>{
 
 // ---------------- SWAP A SINGLE MEAL ----------------
 // Picks a different dish for one meal slot without touching the rest of the month.
-function swapMealAt(wi, di, mealKey, { silent } = {}){
-  const pool = filteredPool(mealKey);
+// forceDish lets undo put an exact dish back, bypassing the random pick —
+// it skips the "no match" check since restoring a dish that was already
+// there a moment ago should always be allowed, even if filters changed.
+function swapMealAt(wi, di, mealKey, { silent, forceDish } = {}){
   const current = lastWeeks[wi][di][mealKey];
-  const others = pool.filter(d => d.name !== current.name);
-  if(others.length === 0){
-    if(!silent) showToast("No other dishes match your current filters for this meal");
-    return false;
+  let next = forceDish;
+  if(!next){
+    const pool = filteredPool(mealKey);
+    const others = pool.filter(d => d.name !== current.name);
+    if(others.length === 0){
+      if(!silent) showToast("No other dishes match your current filters for this meal");
+      return false;
+    }
+    next = others[Math.floor(Math.random() * others.length)];
   }
-  const next = others[Math.floor(Math.random() * others.length)];
   lastWeeks[wi][di][mealKey] = next;
 
   const label = mealKey.charAt(0).toUpperCase() + mealKey.slice(1);
@@ -630,7 +669,8 @@ function swapMealAt(wi, di, mealKey, { silent } = {}){
   savePlanToDevice(lastWeeks);
   applyPlanFilter();
   renderTodayHighlight(lastWeeks);
-  return next;
+  refreshDayTotalsBadge(wi, di);
+  return { next, previous: current };
 }
 
 document.getElementById('scheduleOutput').addEventListener('click', (e)=>{
@@ -642,9 +682,16 @@ document.getElementById('scheduleOutput').addEventListener('click', (e)=>{
     const wi = parseInt(swapBtnEl.dataset.week, 10);
     const di = parseInt(swapBtnEl.dataset.day, 10);
     const mealKey = swapBtnEl.dataset.meal;
-    const next = swapMealAt(wi, di, mealKey);
-    if(next){
-      showToast(`Swapped in ${next.name}`);
+    const result = swapMealAt(wi, di, mealKey);
+    if(result){
+      const { next, previous } = result;
+      showToast(`Swapped in ${next.name}`, {
+        label: "Undo",
+        onClick: ()=>{
+          swapMealAt(wi, di, mealKey, { silent: true, forceDish: previous });
+          showToast(`Back to ${previous.name}`);
+        }
+      });
       trackEvent('meal_swap', { meal: mealKey, new_dish: next.name });
     }
     return;
@@ -657,11 +704,19 @@ document.getElementById('scheduleOutput').addEventListener('click', (e)=>{
     const dishName = excludeBtnEl.dataset.dish;
 
     addExcludedDish(dishName);
-    const next = swapMealAt(wi, di, mealKey, { silent: true });
-    if(next){
-      showToast(`${dishName} won't be suggested again — swapped in ${next.name}`);
+    const result = swapMealAt(wi, di, mealKey, { silent: true });
+    const undoAction = {
+      label: "Undo",
+      onClick: ()=>{
+        removeExcludedDish(dishName);
+        if(result) swapMealAt(wi, di, mealKey, { silent: true, forceDish: result.previous });
+        showToast(`${dishName} can be suggested again`);
+      }
+    };
+    if(result){
+      showToast(`${dishName} won't be suggested again — swapped in ${result.next.name}`, undoAction);
     }else{
-      showToast(`${dishName} won't be suggested again`);
+      showToast(`${dishName} won't be suggested again`, undoAction);
     }
     trackEvent('dish_excluded', { dish: dishName });
   }
@@ -779,6 +834,99 @@ document.getElementById('clearSavedPlanBtn').addEventListener('click', ()=>{
 });
 
 restoreSavedPlan();
+
+// ---------------- MY PLANS (named plan library) ----------------
+// Separate from the single auto-restored SAVED_PLAN_KEY above: this is an
+// opt-in library of a few named plans the person explicitly chose to keep.
+const PLAN_LIBRARY_KEY = "busywomenCookSchedule.planLibrary";
+const PLAN_LIBRARY_MAX = 8;
+
+function loadPlanLibrary(){
+  try{ return JSON.parse(localStorage.getItem(PLAN_LIBRARY_KEY) || "[]"); }catch(e){ return []; }
+}
+function savePlanLibrary(list){
+  try{ localStorage.setItem(PLAN_LIBRARY_KEY, JSON.stringify(list)); }catch(e){ /* storage full or blocked */ }
+}
+
+function renderPlanLibrary(){
+  const list = loadPlanLibrary().sort((a,b) => b.savedAt - a.savedAt);
+  const box = document.getElementById('planLibraryList');
+  if(!list.length){
+    box.innerHTML = '<p class="plan-library-empty">No saved plans yet — name one above to keep it here.</p>';
+    return;
+  }
+  const currentSig = lastWeeks ? JSON.stringify(lastWeeks) : null;
+  box.innerHTML = list.map(p => {
+    const dateLabel = new Date(p.savedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+    const isCurrent = currentSig && JSON.stringify(p.weeks) === currentSig;
+    return `
+    <div class="plan-library-item${isCurrent ? ' is-current' : ''}">
+      <div class="plan-library-info">
+        <div class="plan-library-name">${p.name}${isCurrent ? ' (current)' : ''}</div>
+        <div class="plan-library-meta">Saved ${dateLabel}</div>
+      </div>
+      <button type="button" class="text-action-btn load-plan-btn" data-id="${p.id}">📂 Load</button>
+      <button type="button" class="text-action-btn delete-plan-btn" data-id="${p.id}">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('openLibraryBtn').addEventListener('click', ()=>{
+  renderPlanLibrary();
+  openModal('planLibraryModal');
+});
+
+document.getElementById('saveToLibraryBtn').addEventListener('click', ()=>{
+  if(!lastWeeks){ showToast("Generate a plan first"); return; }
+  const input = document.getElementById('planLibraryName');
+  const name = input.value.trim();
+  if(!name){ showToast("Give this plan a name first"); return; }
+
+  const list = loadPlanLibrary();
+  if(list.length >= PLAN_LIBRARY_MAX){
+    showToast(`You can keep up to ${PLAN_LIBRARY_MAX} plans — delete one first`);
+    return;
+  }
+  list.push({ id: 'plan_' + Date.now(), name, savedAt: Date.now(), state: JSON.parse(JSON.stringify(state)), weeks: JSON.parse(JSON.stringify(lastWeeks)) });
+  savePlanLibrary(list);
+  input.value = '';
+  renderPlanLibrary();
+  trackEvent('plan_saved_to_library', {});
+  showToast(`Saved as "${name}"`);
+});
+
+document.getElementById('planLibraryList').addEventListener('click', e=>{
+  const loadBtn = e.target.closest('.load-plan-btn');
+  const delBtn = e.target.closest('.delete-plan-btn');
+  if(!loadBtn && !delBtn) return;
+  const id = (loadBtn || delBtn).dataset.id;
+  const list = loadPlanLibrary();
+  const entry = list.find(p => p.id === id);
+  if(!entry) return;
+
+  if(loadBtn){
+    state = entry.state;
+    setPillActive('dietFilter', state.diet);
+    setPillActive('effortFilter', state.maxEffort);
+    setPillActive('portionFilter', state.portion);
+    document.querySelector('#quickOnlyFilter .pill').classList.toggle('active', !!state.quickOnly);
+    document.querySelector('#budgetOnlyFilter .pill').classList.toggle('active', !!state.budgetOnly);
+    document.getElementById('breakfastTime').value = state.times.breakfast;
+    document.getElementById('lunchTime').value = state.times.lunch;
+    document.getElementById('dinnerTime').value = state.times.dinner;
+
+    lastWeeks = entry.weeks;
+    renderSchedule(entry.weeks);
+    savePlanToDevice(entry.weeks); // loaded plan becomes the one that auto-restores too
+    closeModal('planLibraryModal');
+    showToast(`Loaded "${entry.name}"`);
+    trackEvent('plan_loaded_from_library', {});
+  }else if(delBtn){
+    savePlanLibrary(list.filter(p => p.id !== id));
+    renderPlanLibrary();
+    showToast(`Deleted "${entry.name}"`);
+  }
+});
 
 // ---------------- MODALS ----------------
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
@@ -1061,52 +1209,46 @@ function buildFeedbackText(){
   return { name, message };
 }
 
-function buildFeedbackMailto(name, message){
-  const to = atob(CONFIG.feedbackEmailB64);
-  const subject = "Busywomen Cook Schedule — Feedback" + (name ? " from " + name : "");
-  const body = (name ? "From: " + name + "\n\n" : "") + message;
-  return "mailto:" + to + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-}
-
+// Feedback goes to OUR backend (POST /api/feedback). The owner's e-mail
+// address lives only in the server's private settings, so it is never in
+// this page's source and never shown to a visitor. There is deliberately no
+// mailto: fallback, because that would expose the address.
 document.getElementById('sendFeedbackBtn').addEventListener('click', async ()=>{
   const { name, message } = buildFeedbackText();
   if(!message){ showToast("Write a message first"); return; }
 
-  // Preferred: send through Web3Forms so the owner's address is never shown to visitors.
-  if(CONFIG.web3formsKey){
-    const btn = document.getElementById('sendFeedbackBtn');
-    btn.disabled = true;
-    try{
-      const res = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({
-          access_key: CONFIG.web3formsKey,
-          subject: "Busywomen Cook Schedule — Feedback" + (name ? " from " + name : ""),
-          from_name: name || "Website visitor",
-          message: message
-        })
-      });
-      const data = await res.json();
-      if(data && data.success){
-        showToast("Thanks! Your feedback was sent.");
-        document.getElementById('feedbackMessage').value = "";
-        closeModal('feedbackModal');
-        trackEvent('feedback_sent', { method: 'web3forms' });
-      }else{
-        showToast("Couldn't send — please try again or copy your message");
-      }
-    }catch(e){
-      showToast("Couldn't send — check your connection or copy your message");
-    }
-    btn.disabled = false;
+  const url = apiUrl('/api/feedback');
+  if(!url){
+    showToast("Feedback sending isn't set up yet — try Copy Message instead");
     return;
   }
 
-  // Fallback: open the visitor's email app (this does show the address in the To: field).
-  window.location.href = buildFeedbackMailto(name, message);
-  showToast("Opening your email app to send this…");
-  trackEvent('feedback_sent', { method: 'mailto' });
+  const btn = document.getElementById('sendFeedbackBtn');
+  btn.disabled = true;
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, message,
+        website: document.getElementById('feedbackWebsite').value, // honeypot, must stay empty
+      }),
+    });
+    const data = await res.json().catch(()=>({}));
+    if(res.ok && data.ok){
+      showToast("Thanks! Your feedback was sent.");
+      document.getElementById('feedbackMessage').value = "";
+      closeModal('feedbackModal');
+      trackEvent('feedback_sent', {});
+    }else if(res.status === 429){
+      showToast("You've sent a few already — please try again later");
+    }else{
+      showToast("Couldn't send — please try again or copy your message");
+    }
+  }catch(e){
+    showToast("Couldn't send — check your connection or copy your message");
+  }
+  btn.disabled = false;
 });
 
 document.getElementById('copyFeedbackBtn').addEventListener('click', ()=>{
@@ -1120,7 +1262,85 @@ document.getElementById('copyFeedbackBtn').addEventListener('click', ()=>{
   });
 });
 
+// ---------------- SHARE THIS APP (reach new people, not just today's plan) ----------------
+function appShareData(){
+  return {
+    title: "Busywomen Cook Schedule",
+    text: "Free monthly meal planner for busy Indian households — veg, non-veg or South Indian, with grocery lists, budget picks and cost estimates.",
+    url: CONFIG.siteUrl,
+  };
+}
+
+document.getElementById('shareAppBtn').addEventListener('click', async ()=>{
+  const data = appShareData();
+  // navigator.share opens the phone's own share sheet — every app the
+  // visitor has installed (WhatsApp, Telegram, Instagram, SMS, email, etc.),
+  // not just one hardcoded channel. This is the real "reach everyone" path
+  // on mobile. Desktop browsers mostly don't support it, so fall back to a
+  // direct WhatsApp share there, since that's this audience's main channel.
+  if(navigator.share){
+    try{
+      await navigator.share(data);
+      trackEvent('app_shared', { method: 'native' });
+    }catch(e){ /* person cancelled the share sheet — not an error */ }
+    return;
+  }
+  const url = "https://wa.me/?text=" + encodeURIComponent(data.text + " " + data.url);
+  window.open(url, "_blank", "noopener");
+  trackEvent('app_shared', { method: 'whatsapp_fallback' });
+});
+
+document.getElementById('copyAppLinkBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(CONFIG.siteUrl).then(()=>{
+    showToast("Link copied — paste it anywhere");
+    trackEvent('app_link_copied', {});
+  }).catch(()=>{
+    showToast("Couldn't copy — select and copy manually");
+  });
+});
+
+// ---------------- VISITOR COUNT (footer) ----------------
+// Our own backend counts anonymous unique visitors per day (India time) and
+// returns "visitors today" plus the running total. If the backend isn't
+// reachable the line simply stays hidden — never an error, never a fake number.
+function initVisitCounter(){
+  const el = document.getElementById('visitCounter');
+  const url = apiUrl('/api/visit');
+  if(!el || !url) return;
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: '{}',
+    credentials: 'omit',
+  })
+    .then(r => r.json())
+    .then(data => {
+      if(data && data.ok && typeof data.today === 'number'){
+        const n = v => Number(v).toLocaleString('en-IN');
+        el.textContent = `👀 ${n(data.today)} visitor${data.today === 1 ? '' : 's'} today · ${n(data.total_visits)} total visits`;
+        el.classList.remove('hidden');
+      }
+    })
+    .catch(()=>{ /* backend unreachable this time — stay hidden */ });
+}
+initVisitCounter();
+
 // ---------------- WHATSAPP SHARE (WHOLE WEEK) ----------------
+// Tries the phone's native share sheet first — on mobile this reaches every
+// installed app (Telegram, Instagram, SMS, email, WhatsApp, etc.), not just
+// one hardcoded channel. Falls back to opening WhatsApp directly, exactly
+// the old behaviour, for desktop browsers that don't support native share.
+function shareTextOrWhatsApp(text, trackName){
+  if(navigator.share){
+    navigator.share({ text }).then(()=>{
+      trackEvent(trackName, { method: 'native' });
+    }).catch(()=>{ /* person cancelled the share sheet — not an error */ });
+    return;
+  }
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
+  trackEvent(trackName, { method: 'whatsapp_fallback' });
+}
+
 document.getElementById('shareWeekBtn').addEventListener('click', ()=>{
   if(!lastWeeks){ showToast("Generate a schedule first"); return; }
   const info = getTodayInfo();
@@ -1135,11 +1355,10 @@ document.getElementById('shareWeekBtn').addEventListener('click', ()=>{
       .flatMap((block, i, arr) => i < arr.length - 1 ? [block, ""] : [block]),
     ...brandFooterLines(),
   ];
-  window.open("https://wa.me/?text=" + encodeURIComponent(lines.join("\n")), "_blank", "noopener");
-  trackEvent('whatsapp_share_week', {});
+  shareTextOrWhatsApp(lines.join("\n"), 'whatsapp_share_week');
 });
 
-// ---------------- WHATSAPP SHARE ----------------
+// ---------------- SHARE TODAY'S PLAN ----------------
 document.getElementById('shareWhatsAppBtn').addEventListener('click', ()=>{
   if(!lastWeeks){ showToast("Generate a schedule first"); return; }
   const info = getTodayInfo();
@@ -1155,9 +1374,7 @@ document.getElementById('shareWhatsAppBtn').addEventListener('click', ()=>{
     ...(desc ? ["", desc] : []),
     ...brandFooterLines(),
   ];
-  const url = "https://wa.me/?text=" + encodeURIComponent(lines.join("\n"));
-  window.open(url, "_blank", "noopener");
-  trackEvent('whatsapp_share', {});
+  shareTextOrWhatsApp(lines.join("\n"), 'whatsapp_share');
 });
 
 // ---------------- CALENDAR EXPORT (.ics) ----------------
