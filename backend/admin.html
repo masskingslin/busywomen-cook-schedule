@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Cook Schedule — Owner Dashboard</title>
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#123B3A;color:#FBF3E4;}
+    main{max-width:760px;margin:0 auto;padding:18px 14px 60px;}
+    h1{font-size:20px;margin:6px 0 14px;}
+    h2{font-size:14px;margin:22px 0 8px;color:#E7A72C;text-transform:uppercase;letter-spacing:.05em;}
+    .card{background:#FBF3E4;color:#1B1B16;border-radius:14px;padding:14px;margin-bottom:12px;}
+    .login{display:flex;gap:8px;}
+    input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1.5px solid #D8CBA9;font-size:14px;}
+    button{padding:10px 16px;border:0;border-radius:10px;background:#1B5450;color:#fff;font-weight:700;cursor:pointer;}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+    .stat b{display:block;font-size:24px;}
+    .stat span{font-size:11px;color:#5A5A50;}
+    .bars{display:flex;align-items:flex-end;gap:4px;height:110px;}
+    .bar{flex:1;background:#1B5450;border-radius:4px 4px 0 0;min-height:2px;position:relative;}
+    .bar i{position:absolute;top:-16px;left:0;right:0;text-align:center;font:600 10px system-ui;color:#1B1B16;}
+    .days{display:flex;gap:4px;font-size:9px;color:#5A5A50;margin-top:4px;}
+    .days span{flex:1;text-align:center;}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    td,th{padding:6px 4px;border-bottom:1px solid #EADFC2;text-align:left;vertical-align:top;}
+    .fb{border-bottom:1px solid #EADFC2;padding:8px 0;}
+    .fb small{color:#5A5A50;display:block;margin-bottom:3px;}
+    .fb p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:14px;}
+    .err{color:#C1442D;font-weight:600;margin-top:8px;}
+    .hidden{display:none;}
+  </style>
+</head>
+<body>
+<main>
+  <h1>📊 Cook Schedule — owner dashboard</h1>
+
+  <div id="loginBox" class="card">
+    <p style="margin-top:0">Enter your admin token (the <code>ADMIN_TOKEN</code> from <code>backend/.env</code>).</p>
+    <div class="login">
+      <input id="tokenInput" type="password" autocomplete="current-password" placeholder="Admin token">
+      <button id="loginBtn" type="button">Open</button>
+    </div>
+    <div id="loginError" class="err hidden"></div>
+  </div>
+
+  <div id="dash" class="hidden">
+    <div class="card"><div class="stats">
+      <div class="stat"><b id="sToday">–</b><span>visitors today</span></div>
+      <div class="stat"><b id="sTotal">–</b><span>total visits</span></div>
+      <div class="stat"><b id="sViews">–</b><span>page views</span></div>
+    </div></div>
+
+    <h2>Visitors — last 14 days</h2>
+    <div class="card"><div id="bars" class="bars"></div><div id="barDays" class="days"></div></div>
+
+    <h2>Most clicked products (30 days)</h2>
+    <div class="card"><table id="affTable"></table></div>
+
+    <h2>What people do (30 days)</h2>
+    <div class="card"><table id="evTable"></table></div>
+
+    <h2>Feedback <span id="fbCount"></span></h2>
+    <div class="card" id="fbList"></div>
+    <div id="mailNote" class="err hidden"></div>
+    <button id="logoutBtn" type="button" style="margin-top:14px;background:#5A5A50">Lock</button>
+  </div>
+</main>
+<script src="/admin/app.js"></script>
+</body>
+</html>
