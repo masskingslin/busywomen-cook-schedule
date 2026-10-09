@@ -1,10 +1,11 @@
 // Bumping CACHE_NAME invalidates old caches on next visit — do this whenever
 // core files change.
-const CACHE_NAME = "busywomen-cook-v13";
+const CACHE_NAME = "busywomen-cook-v22";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./css/styles.css",
+  "./css/fonts.css",
   "./js/data.js",
   "./js/recipes.js",
   "./js/app.js",
@@ -12,7 +13,13 @@ const CORE_ASSETS = [
   "./robots.txt",
   "./sitemap.xml",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./fonts/plus-jakarta-sans-latin-400-normal.woff2",
+  "./fonts/plus-jakarta-sans-latin-500-normal.woff2",
+  "./fonts/plus-jakarta-sans-latin-600-normal.woff2",
+  "./fonts/plus-jakarta-sans-latin-700-normal.woff2",
+  "./fonts/playfair-display-latin-600-normal.woff2",
+  "./fonts/playfair-display-latin-400-italic.woff2"
 ];
 
 self.addEventListener("install", (event) => {
