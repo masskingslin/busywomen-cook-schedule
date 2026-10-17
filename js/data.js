@@ -7,146 +7,12 @@
 
 const CONFIG = {
   amazonTag: "kingcloud-21",
-  amazonDomain: "amazon.in",
-  // Our own backend (backend/server.py): feedback, visitor count, analytics.
-  // The site is on GitHub Pages, so put your backend's public address here
-  // (the Cloudflare Tunnel hostname that points at http://localhost:8090),
-  // for example "https://api.yourname.is-a.dev". Until you do, Feedback says
-  // "isn't set up yet" and the footer visitor line stays hidden.
-  //   "https://..."  -> backend at that address (GitHub Pages setup)
-  //   "same-origin"  -> only when the backend itself serves this page
-  //   ""             -> backend off
-  apiBase: "",
-  // Used by the footer "Share this app" button. Update if you host this
-  // somewhere other than this URL.
-  siteUrl: "https://masskingslin.github.io/busywomen-cook-schedule/"
+  amazonDomain: "amazon.in"
 };
 
 const DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const CAT_LABEL = { "veg":"Veg", "non-veg":"Non-veg", "south-indian":"South Indian" };
 const PEPPER = { 1:"🌶", 2:"🌶🌶", 3:"🌶🌶🌶" };
-
-// ---------------- GROCERY PACK CATALOG ----------------
-// Maps each ingredient (by exact name, as used above) to the smallest realistic
-// Amazon pantry/grocery pack for it. "perPack" is expressed in the ingredient's
-// own recipe unit (cup/tbsp/tsp/g/pcs/leaves/slices) so the grocery list can do
-// packsNeeded = ceil(totalRecipeQty / perPack) without any further conversion.
-// This is what lets "you need 2.3 cups of rice" become "buy 1 × 1 kg pack".
-const PACK_CATALOG = {
-  // ---- staples sold by weight, measured in cups (grams-per-cup baked into perPack) ----
-  "Basmati rice":            { perPack: 5,    label: "1 kg pack", priceINR: 120, aisle: "Grains & Pulses", kcalPerUnit: 720 },
-  "Toor dal":                { perPack: 5,    label: "1 kg pack", priceINR: 160, aisle: "Grains & Pulses", kcalPerUnit: 686 },
-  "Urad dal":                { perPack: 5,    label: "1 kg pack", priceINR: 150, aisle: "Grains & Pulses", kcalPerUnit: 682 },
-  "Moong dal":               { perPack: 5,    label: "1 kg pack", priceINR: 140, aisle: "Grains & Pulses", kcalPerUnit: 694 },
-  "Rajma (kidney beans)":    { perPack: 5,    label: "1 kg pack", priceINR: 150, aisle: "Grains & Pulses", kcalPerUnit: 674 },
-  "Kabuli chana (chickpeas)":{ perPack: 5.25, label: "1 kg pack", priceINR: 110, aisle: "Grains & Pulses", kcalPerUnit: 692 },
-  "Mixed dals":              { perPack: 5,    label: "1 kg pack", priceINR: 150, aisle: "Grains & Pulses", kcalPerUnit: 680 },
-  "Mixed lentils (adai mix)":{ perPack: 5,    label: "1 kg pack", priceINR: 150, aisle: "Grains & Pulses", kcalPerUnit: 680 },
-  "Idli rice":               { perPack: 5,    label: "1 kg pack", priceINR: 70, aisle: "Grains & Pulses", kcalPerUnit: 720 },
-  "Dosa rice":               { perPack: 5,    label: "1 kg pack", priceINR: 70, aisle: "Grains & Pulses", kcalPerUnit: 720 },
-  "Raw rice":                { perPack: 5,    label: "1 kg pack", priceINR: 65, aisle: "Grains & Pulses", kcalPerUnit: 720 },
-  "Whole wheat atta":        { perPack: 8.3,  label: "1 kg pack", priceINR: 55, aisle: "Grains & Pulses", kcalPerUnit: 408 },
-  "Maida flour":             { perPack: 8.3,  label: "1 kg pack", priceINR: 50, aisle: "Grains & Pulses", kcalPerUnit: 437 },
-  "Besan (gram flour)":      { perPack: 4.2,  label: "500 g pack", priceINR: 65, aisle: "Grains & Pulses", kcalPerUnit: 464 },
-  "Broken wheat daliya":     { perPack: 2.8,  label: "500 g pack", priceINR: 55, aisle: "Grains & Pulses", kcalPerUnit: 617 },
-  "Rava (semolina)":         { perPack: 6.25, label: "1 kg pack", priceINR: 55, aisle: "Grains & Pulses", kcalPerUnit: 576 },
-  "Poha (flattened rice)":   { perPack: 10,   label: "500 g pack", priceINR: 45, aisle: "Grains & Pulses", kcalPerUnit: 173 },
-  "Rice flour (appam)":      { perPack: 3.3,  label: "500 g pack", priceINR: 45, aisle: "Grains & Pulses", kcalPerUnit: 549 },
-  "Rice flour (idiyappam)":  { perPack: 3.3,  label: "500 g pack", priceINR: 45, aisle: "Grains & Pulses", kcalPerUnit: 549 },
-  "Rice flour coating":      { perPack: 3.3,  label: "500 g pack", priceINR: 45, aisle: "Grains & Pulses", kcalPerUnit: 549 },
-  "Naan flour mix":          { perPack: 4.2,  label: "500 g pack", priceINR: 70, aisle: "Grains & Pulses", kcalPerUnit: 408 },
-  "Dosa batter mix":         { perPack: 4.2,  label: "1 kg tetra pack", priceINR: 90, aisle: "Grains & Pulses", kcalPerUnit: 360 },
-  "Mixed vegetables":        { perPack: 3.3,  label: "500 g pack", priceINR: 60, aisle: "Vegetables & Produce", kcalPerUnit: 60 },
-  "Coconut":                 { perPack: 2.5,  label: "200 g frozen grated pack", priceINR: 60, aisle: "Vegetables & Produce", kcalPerUnit: 283 },
-  "Coconut milk":            { perPack: 1.67, label: "400 ml tetra pack", priceINR: 60, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 552 },
-  "Chicken stock":           { perPack: 4.2,  label: "1 L tetra pack", priceINR: 150, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 36 },
-  "Curd":                    { perPack: 1.6,  label: "400 g cup", priceINR: 40, aisle: "Dairy & Paneer", kcalPerUnit: 147 },
-  "Tomato puree":            { perPack: 0.82, label: "200 g tetra pack", priceINR: 40, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 78 },
-  "Onion tomato masala":     { perPack: 1,    label: "250 g pack", priceINR: 60, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 288 },
-  "Salad greens":            { perPack: 2.5,  label: "100 g pack", priceINR: 40, aisle: "Vegetables & Produce", kcalPerUnit: 8 },
-
-  // ---- spice powders / masalas / pastes, measured in tbsp ----
-  "Biryani masala":          { perPack: 6.7,  label: "100 g pack", priceINR: 90, aisle: "Spices & Masalas", kcalPerUnit: 38 },
-  "Bisi bele bath powder":   { perPack: 13.3, label: "200 g pack", priceINR: 110, aisle: "Spices & Masalas", kcalPerUnit: 45 },
-  "Chettinad masala":        { perPack: 6.7,  label: "100 g pack", priceINR: 90, aisle: "Spices & Masalas", kcalPerUnit: 38 },
-  "Chole masala":            { perPack: 6.7,  label: "100 g pack", priceINR: 80, aisle: "Spices & Masalas", kcalPerUnit: 38 },
-  "Rasam powder":            { perPack: 13.3, label: "200 g pack", priceINR: 100, aisle: "Spices & Masalas", kcalPerUnit: 42 },
-  "Sambar powder":           { perPack: 13.3, label: "200 g pack", priceINR: 100, aisle: "Spices & Masalas", kcalPerUnit: 42 },
-  "Spice masala":            { perPack: 6.7,  label: "100 g pack", priceINR: 85, aisle: "Spices & Masalas", kcalPerUnit: 38 },
-  "Butter":                  { perPack: 7.1,  label: "100 g pack", priceINR: 60, aisle: "Dairy & Paneer", kcalPerUnit: 100 },
-  "Fresh cream":             { perPack: 13.3, label: "200 ml pack", priceINR: 55, aisle: "Dairy & Paneer", kcalPerUnit: 45 },
-  "Ghee":                    { perPack: 33.3, label: "500 g jar", priceINR: 320, aisle: "Dairy & Paneer", kcalPerUnit: 126 },
-  "Ginger":                  { perPack: 13.3, label: "200 g pack", priceINR: 50, aisle: "Vegetables & Produce", kcalPerUnit: 12 },
-  "Ginger garlic paste":     { perPack: 13.3, label: "200 g jar", priceINR: 70, aisle: "Spices & Masalas", kcalPerUnit: 15 },
-  "Mayonnaise":              { perPack: 16.7, label: "250 g jar", priceINR: 110, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 102 },
-  "Olive oil":               { perPack: 35.7, label: "500 ml bottle", priceINR: 450, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 124 },
-  "Peanuts":                 { perPack: 20,   label: "200 g pack", priceINR: 60, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 57 },
-  "Soy sauce":               { perPack: 13.3, label: "200 ml bottle", priceINR: 90, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 9 },
-  "Tamarind":                { perPack: 13.3, label: "200 g pack", priceINR: 45, aisle: "Spices & Masalas", kcalPerUnit: 36 },
-
-  // ---- small-quantity spices, measured in tsp ----
-  "Black pepper":            { perPack: 20,   label: "100 g pack", priceINR: 110, aisle: "Spices & Masalas", kcalPerUnit: 13 },
-  "Cumin seeds":             { perPack: 20,   label: "100 g pack", priceINR: 70, aisle: "Spices & Masalas", kcalPerUnit: 19 },
-  "Fenugreek seeds":         { perPack: 20,   label: "100 g pack", priceINR: 55, aisle: "Spices & Masalas", kcalPerUnit: 16 },
-  "Garam masala":            { perPack: 20,   label: "100 g pack", priceINR: 75, aisle: "Spices & Masalas", kcalPerUnit: 14 },
-  "Mustard seeds":           { perPack: 20,   label: "100 g pack", priceINR: 45, aisle: "Spices & Masalas", kcalPerUnit: 25 },
-  "Whole garam masala":      { perPack: 20,   label: "100 g pack", priceINR: 90, aisle: "Spices & Masalas", kcalPerUnit: 13 },
-
-  // ---- meat / seafood / paneer, already measured in grams ----
-  "Chicken":                 { perPack: 500,  label: "500 g pack", priceINR: 160, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.8 },
-  "Chicken breast":          { perPack: 500,  label: "500 g pack", priceINR: 190, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.65 },
-  "Chicken curry cut":       { perPack: 500,  label: "500 g pack", priceINR: 160, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.8 },
-  "Chicken pieces":          { perPack: 500,  label: "500 g pack", priceINR: 160, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.8 },
-  "Minced mutton keema":     { perPack: 500,  label: "500 g pack", priceINR: 320, aisle: "Meat, Fish & Seafood", kcalPerUnit: 2.5 },
-  "Mutton curry cut":        { perPack: 500,  label: "500 g pack", priceINR: 350, aisle: "Meat, Fish & Seafood", kcalPerUnit: 2.5 },
-  "Fish fillet":             { perPack: 500,  label: "500 g pack", priceINR: 220, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.3 },
-  "Prawns":                  { perPack: 500,  label: "500 g pack", priceINR: 280, aisle: "Meat, Fish & Seafood", kcalPerUnit: 1.0 },
-  "Paneer":                  { perPack: 200,  label: "200 g pack", priceINR: 90, aisle: "Dairy & Paneer", kcalPerUnit: 2.65 },
-  "Spinach":                 { perPack: 250,  label: "250 g bunch/pack", priceINR: 30, aisle: "Vegetables & Produce", kcalPerUnit: 0.23 },
-
-  // ---- produce sold by weight, measured in pcs (grams-per-piece baked in) ----
-  "Onion":                   { perPack: 6.7,  label: "1 kg bag", priceINR: 40, aisle: "Vegetables & Produce", kcalPerUnit: 60 },
-  "Potatoes":                { perPack: 6.7,  label: "1 kg bag", priceINR: 35, aisle: "Vegetables & Produce", kcalPerUnit: 116 },
-  "Tomato":                  { perPack: 4.2,  label: "500 g pack", priceINR: 30, aisle: "Vegetables & Produce", kcalPerUnit: 22 },
-  "Capsicum":                { perPack: 3.3,  label: "500 g pack", priceINR: 45, aisle: "Vegetables & Produce", kcalPerUnit: 30 },
-  "Brinjal (eggplant)":      { perPack: 2.8,  label: "500 g pack", priceINR: 35, aisle: "Vegetables & Produce", kcalPerUnit: 45 },
-  "Green chilli":            { perPack: 12.5, label: "100 g pack", priceINR: 15, aisle: "Vegetables & Produce", kcalPerUnit: 3 },
-  "Lemon":                   { perPack: 5,    label: "250 g pack (≈5 pcs)", priceINR: 25, aisle: "Vegetables & Produce", kcalPerUnit: 15 },
-
-  // ---- count-based packs (no weight conversion — sold as a fixed count) ----
-  "Eggs":                    { perPack: 6,    label: "tray of 6", priceINR: 45, aisle: "Dairy & Paneer", kcalPerUnit: 72 },
-  "Chicken sausages":        { perPack: 6,    label: "pack of 6", priceINR: 150, aisle: "Meat, Fish & Seafood", kcalPerUnit: 90 },
-  "Tortilla wrap":           { perPack: 6,    label: "pack of 6", priceINR: 90, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 110 },
-  "Vegetable stock cube":    { perPack: 6,    label: "pack of 6", priceINR: 110, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 10 },
-  "Bread loaf":              { perPack: 12,   label: "1 loaf (≈12 slices)", priceINR: 45, aisle: "Pantry, Oils & Sauces", kcalPerUnit: 70 },
-  "Curry leaves":            { perPack: 20,   label: "1 bunch", priceINR: 15, aisle: "Vegetables & Produce", kcalPerUnit: 1 },
-  "Lettuce":                 { perPack: 10,   label: "1 pack", priceINR: 40, aisle: "Vegetables & Produce", kcalPerUnit: 2 },
-
-  // ---- ready-to-eat / instant packs — priced per single pack (unit already 'pack') ----
-  "Instant Poha Mix": { priceINR: 60, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Instant Oats Cup": { priceINR: 55, aisle: "Ready-to-eat / Instant", kcalPerUnit: 150 },
-  "Breakfast Cereal": { priceINR: 180, aisle: "Ready-to-eat / Instant", kcalPerUnit: 350 },
-  "Frozen Aloo Paratha": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 250 },
-  "Ready-to-eat Upma": { priceINR: 70, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Instant Rava Idli Mix": { priceINR: 85, aisle: "Ready-to-eat / Instant", kcalPerUnit: 280 },
-  "Ready-to-eat Idli & Sambar": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 320 },
-  "Ready-to-eat Egg Bhurji": { priceINR: 95, aisle: "Ready-to-eat / Instant", kcalPerUnit: 280 },
-  "Frozen Chicken Sausages": { priceINR: 150, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Ready-to-eat Dal Makhani": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 350 },
-  "Ready-to-eat Rajma": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 320 },
-  "Instant Vegetable Pulao Mix": { priceINR: 80, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Ready-to-eat Sambar Rice": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 320 },
-  "Ready-to-eat Curd Rice Mix": { priceINR: 85, aisle: "Ready-to-eat / Instant", kcalPerUnit: 280 },
-  "Ready-to-eat Chicken Curry": { priceINR: 130, aisle: "Ready-to-eat / Instant", kcalPerUnit: 380 },
-  "Ready-to-eat Chicken Biryani": { priceINR: 150, aisle: "Ready-to-eat / Instant", kcalPerUnit: 450 },
-  "Instant Khichdi Mix": { priceINR: 75, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Ready-to-eat Palak Paneer": { priceINR: 110, aisle: "Ready-to-eat / Instant", kcalPerUnit: 350 },
-  "Frozen Paneer Tikka": { priceINR: 160, aisle: "Ready-to-eat / Instant", kcalPerUnit: 300 },
-  "Frozen Appam Pack": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 250 },
-  "Ready-to-eat Vegetable Stew": { priceINR: 90, aisle: "Ready-to-eat / Instant", kcalPerUnit: 280 },
-  "Ready-to-eat Chicken Stew": { priceINR: 140, aisle: "Ready-to-eat / Instant", kcalPerUnit: 350 },
-  "Ready-to-eat Fish Curry": { priceINR: 150, aisle: "Ready-to-eat / Instant", kcalPerUnit: 350 },
-};
 
 const DISHES = [
   // ---------------- BREAKFAST — VEG ----------------
@@ -293,80 +159,6 @@ const DISHES = [
   {name:"Vegetable Uttapam", meal:"dinner", category:"south-indian", effort:1, time:20, ingredients:[
     {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
 
-  // ---------------- MORE DISHES ----------------
-  {name:"Suji Chilla", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
-    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"}]},
-  {name:"Bread Upma", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
-    {name:"Bread loaf", qty:6, unit:"slices"},{name:"Onion", qty:1, unit:"pcs"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
-  {name:"Methi Thepla", meal:"breakfast", category:"veg", effort:2, time:30, ingredients:[
-    {name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Besan (gram flour)", qty:0.25, unit:"cup"},{name:"Cumin seeds", qty:0.5, unit:"tsp"}]},
-  {name:"Aloo Sandwich", meal:"breakfast", category:"veg", effort:1, time:15, ingredients:[
-    {name:"Bread loaf", qty:6, unit:"slices"},{name:"Potatoes", qty:2, unit:"pcs"},{name:"Butter", qty:2, unit:"tbsp"}]},
-  {name:"Masala Omelette Roll", meal:"breakfast", category:"non-veg", effort:1, time:15, ingredients:[
-    {name:"Eggs", qty:3, unit:"pcs"},{name:"Whole wheat atta", qty:1, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
-  {name:"Egg Sandwich", meal:"breakfast", category:"non-veg", effort:1, time:10, ingredients:[
-    {name:"Eggs", qty:3, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Butter", qty:1, unit:"tbsp"}]},
-  {name:"Keema Egg Toast", meal:"breakfast", category:"non-veg", effort:2, time:25, ingredients:[
-    {name:"Minced mutton keema", qty:200, unit:"g"},{name:"Eggs", qty:2, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"}]},
-  {name:"Tomato Dosa", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
-    {name:"Dosa rice", qty:1, unit:"cup"},{name:"Tomato", qty:2, unit:"pcs"},{name:"Urad dal", qty:0.25, unit:"cup"}]},
-  {name:"Onion Uttapam", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
-    {name:"Dosa batter mix", qty:2, unit:"cup"},{name:"Onion", qty:2, unit:"pcs"},{name:"Green chilli", qty:2, unit:"pcs"}]},
-  {name:"Pesarattu", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
-    {name:"Moong dal", qty:1, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"},{name:"Ginger", qty:1, unit:"tbsp"}]},
-  {name:"Rava Dosa", meal:"breakfast", category:"south-indian", effort:2, time:25, ingredients:[
-    {name:"Rava (semolina)", qty:1, unit:"cup"},{name:"Rice flour (appam)", qty:0.5, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"}]},
-  {name:"Jeera Rice & Dal Fry", meal:"lunch", category:"veg", effort:1, time:30, ingredients:[
-    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Moong dal", qty:0.5, unit:"cup"},{name:"Cumin seeds", qty:1, unit:"tsp"}]},
-  {name:"Matar Paneer & Roti", meal:"lunch", category:"veg", effort:2, time:35, ingredients:[
-    {name:"Paneer", qty:200, unit:"g"},{name:"Tomato", qty:2, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
-  {name:"Vegetable Biryani", meal:"lunch", category:"veg", effort:3, time:50, ingredients:[
-    {name:"Basmati rice", qty:2, unit:"cup"},{name:"Mixed vegetables", qty:2, unit:"cup"},{name:"Biryani masala", qty:2, unit:"tbsp"}]},
-  {name:"Chana Masala & Rice", meal:"lunch", category:"veg", effort:2, time:40, ingredients:[
-    {name:"Kabuli chana (chickpeas)", qty:1, unit:"cup"},{name:"Chole masala", qty:1, unit:"tbsp"},{name:"Basmati rice", qty:1.5, unit:"cup"}]},
-  {name:"Aloo Jeera & Roti", meal:"lunch", category:"veg", effort:1, time:25, ingredients:[
-    {name:"Potatoes", qty:3, unit:"pcs"},{name:"Cumin seeds", qty:1, unit:"tsp"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
-  {name:"Chicken Pulao", meal:"lunch", category:"non-veg", effort:2, time:40, ingredients:[
-    {name:"Chicken curry cut", qty:400, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Garam masala", qty:1, unit:"tsp"}]},
-  {name:"Egg Biryani", meal:"lunch", category:"non-veg", effort:2, time:40, ingredients:[
-    {name:"Eggs", qty:4, unit:"pcs"},{name:"Basmati rice", qty:2, unit:"cup"},{name:"Biryani masala", qty:2, unit:"tbsp"}]},
-  {name:"Keema Rice", meal:"lunch", category:"non-veg", effort:2, time:35, ingredients:[
-    {name:"Minced mutton keema", qty:300, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
-  {name:"Chicken Kadai & Roti", meal:"lunch", category:"non-veg", effort:3, time:45, ingredients:[
-    {name:"Chicken curry cut", qty:500, unit:"g"},{name:"Capsicum", qty:2, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
-  {name:"Tamarind Rice (Puliyogare)", meal:"lunch", category:"south-indian", effort:2, time:30, ingredients:[
-    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Tamarind", qty:2, unit:"tbsp"},{name:"Peanuts", qty:2, unit:"tbsp"}]},
-  {name:"Coconut Rice", meal:"lunch", category:"south-indian", effort:1, time:20, ingredients:[
-    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Coconut", qty:0.5, unit:"cup"},{name:"Mustard seeds", qty:0.5, unit:"tsp"}]},
-  {name:"Tomato Rice", meal:"lunch", category:"south-indian", effort:1, time:25, ingredients:[
-    {name:"Raw rice", qty:1.5, unit:"cup"},{name:"Tomato", qty:3, unit:"pcs"},{name:"Curry leaves", qty:8, unit:"leaves"}]},
-  {name:"Kerala Egg Curry & Rice", meal:"lunch", category:"south-indian", effort:2, time:35, ingredients:[
-    {name:"Eggs", qty:4, unit:"pcs"},{name:"Coconut milk", qty:0.5, unit:"cup"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
-  {name:"Veg Pulao & Raita", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
-    {name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Mixed vegetables", qty:1.5, unit:"cup"},{name:"Curd", qty:0.5, unit:"cup"}]},
-  {name:"Paneer Bhurji & Roti", meal:"dinner", category:"veg", effort:1, time:25, ingredients:[
-    {name:"Paneer", qty:200, unit:"g"},{name:"Onion", qty:1, unit:"pcs"},{name:"Whole wheat atta", qty:2, unit:"cup"}]},
-  {name:"Tomato Soup & Toast", meal:"dinner", category:"veg", effort:1, time:20, ingredients:[
-    {name:"Tomato", qty:4, unit:"pcs"},{name:"Bread loaf", qty:4, unit:"slices"},{name:"Butter", qty:1, unit:"tbsp"}]},
-  {name:"Dal Palak & Rice", meal:"dinner", category:"veg", effort:2, time:30, ingredients:[
-    {name:"Toor dal", qty:0.5, unit:"cup"},{name:"Spinach", qty:250, unit:"g"},{name:"Basmati rice", qty:1, unit:"cup"}]},
-  {name:"Chicken Fried Rice", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
-    {name:"Chicken breast", qty:200, unit:"g"},{name:"Basmati rice", qty:1.5, unit:"cup"},{name:"Soy sauce", qty:1, unit:"tbsp"}]},
-  {name:"Chicken Tikka & Salad", meal:"dinner", category:"non-veg", effort:2, time:35, ingredients:[
-    {name:"Chicken breast", qty:300, unit:"g"},{name:"Curd", qty:0.5, unit:"cup"},{name:"Salad greens", qty:2, unit:"cup"}]},
-  {name:"Fish Masala Fry & Roti", meal:"dinner", category:"non-veg", effort:2, time:30, ingredients:[
-    {name:"Fish fillet", qty:400, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Green chilli", qty:2, unit:"pcs"}]},
-  {name:"Keema Matar & Roti", meal:"dinner", category:"non-veg", effort:2, time:40, ingredients:[
-    {name:"Minced mutton keema", qty:300, unit:"g"},{name:"Whole wheat atta", qty:2, unit:"cup"},{name:"Onion", qty:1, unit:"pcs"}]},
-  {name:"Podi Idli", meal:"dinner", category:"south-indian", effort:2, time:25, ingredients:[
-    {name:"Idli rice", qty:1, unit:"cup"},{name:"Urad dal", qty:0.25, unit:"cup"},{name:"Sambar powder", qty:1, unit:"tbsp"}]},
-  {name:"Kerala Egg Roast & Appam", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
-    {name:"Eggs", qty:4, unit:"pcs"},{name:"Onion", qty:2, unit:"pcs"},{name:"Rice flour (appam)", qty:1, unit:"cup"}]},
-  {name:"Vegetable Pongal", meal:"dinner", category:"south-indian", effort:1, time:25, ingredients:[
-    {name:"Raw rice", qty:1, unit:"cup"},{name:"Moong dal", qty:0.5, unit:"cup"},{name:"Mixed vegetables", qty:1, unit:"cup"}]},
-  {name:"Fish Moilee & Rice", meal:"dinner", category:"south-indian", effort:3, time:40, ingredients:[
-    {name:"Fish fillet", qty:400, unit:"g"},{name:"Coconut milk", qty:1, unit:"cup"},{name:"Raw rice", qty:1.5, unit:"cup"}]},
-
   // ---------------- READY-MADE / INSTANT (store-bought, quick) ----------------
   {name:"Instant Poha Mix", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Instant Poha Mix", qty:1, unit:"pack"}]},
   {name:"Instant Oats Cup", meal:"breakfast", category:"veg", effort:1, time:5, readymade:true, ingredients:[{name:"Instant Oats Cup", qty:1, unit:"pack"}]},
@@ -393,22 +185,24 @@ const DISHES = [
   {name:"Ready-to-eat Fish Curry", meal:"dinner", category:"non-veg", effort:1, time:8, readymade:true, ingredients:[{name:"Ready-to-eat Fish Curry", qty:1, unit:"pack"}]},
 ];
 
-// ---------------- KIDS' SNACKS & DRINKS (best-price picks) ----------------
+// ---------------- KIDS' HEALTHY SNACKS & DRINKS ----------------
+// Buy links for this list sort Amazon results by lowest price first,
+// since the ask here is "best deals / cheap price" rather than relevance.
 const KID_ITEMS = [
-  {name:"Roasted Makhana (Fox Nuts)", type:"snack", emoji:"🍿", note:"Light, crunchy, air-popped", budget:true},
-  {name:"Baked Vegetable Chips", type:"snack", emoji:"🥕", note:"Not fried, kid-friendly crunch", budget:true},
-  {name:"Whole Wheat Crackers", type:"snack", emoji:"🍘", note:"Good with cheese or hummus", budget:true},
+  {name:"Roasted Makhana (Fox Nuts)", type:"snack", emoji:"🍿", note:"Light, crunchy, air-popped"},
+  {name:"Baked Vegetable Chips", type:"snack", emoji:"🥕", note:"Not fried, kid-friendly crunch"},
+  {name:"Whole Wheat Crackers", type:"snack", emoji:"🍘", note:"Good with cheese or hummus"},
   {name:"Trail Mix (Nuts & Dried Fruit)", type:"snack", emoji:"🥜", note:"No added sugar, protein-rich"},
-  {name:"Multigrain Rusk", type:"snack", emoji:"🍞", note:"Pairs well with milk", budget:true},
-  {name:"Ragi Cookies", type:"snack", emoji:"🍪", note:"Iron-rich, no maida", budget:true},
-  {name:"Roasted Chana", type:"snack", emoji:"🫘", note:"High protein, low oil", budget:true},
+  {name:"Multigrain Rusk", type:"snack", emoji:"🍞", note:"Pairs well with milk"},
+  {name:"Ragi Cookies", type:"snack", emoji:"🍪", note:"Iron-rich, no maida"},
+  {name:"Roasted Chana", type:"snack", emoji:"🫘", note:"High protein, low oil"},
   {name:"No-added-sugar Granola Bars", type:"snack", emoji:"🍫", note:"Good lunchbox filler"},
-  {name:"Baked Banana Chips", type:"snack", emoji:"🍌", note:"Lightly salted, not deep-fried", budget:true},
+  {name:"Baked Banana Chips", type:"snack", emoji:"🍌", note:"Lightly salted, not deep-fried"},
   {name:"Ready Sprouts Chaat Mix", type:"snack", emoji:"🌱", note:"Protein + fibre combo"},
-  {name:"Flavoured Milk (no added sugar)", type:"drink", emoji:"🥛", note:"Calcium for growing kids", budget:true},
+  {name:"Flavoured Milk (no added sugar)", type:"drink", emoji:"🥛", note:"Calcium for growing kids"},
   {name:"100% Fruit Juice (no sugar added)", type:"drink", emoji:"🧃", note:"Check label for 'no added sugar'"},
   {name:"Packaged Coconut Water", type:"drink", emoji:"🥥", note:"Natural electrolytes"},
-  {name:"Buttermilk / Chaas Mix", type:"drink", emoji:"🥤", note:"Light, good after meals", budget:true},
+  {name:"Buttermilk / Chaas Mix", type:"drink", emoji:"🥤", note:"Light, good after meals"},
   {name:"Almond Milk", type:"drink", emoji:"🌰", note:"Good dairy-free option"},
   {name:"Kids' Protein Milk Shake Mix", type:"drink", emoji:"🍶", note:"For active or picky eaters"},
 ];
