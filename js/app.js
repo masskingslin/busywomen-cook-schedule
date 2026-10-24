@@ -7,10 +7,35 @@ let state = {
   maxEffort: 3,
   portion: 2,
   quickOnly: false,
+  budgetPicks: false,
   times: { breakfast: "08:00", lunch: "13:00", dinner: "20:00" },
 };
 
 let lastWeeks = null; // the 4-week schedule currently on screen
+
+// ---------------- LOCAL STORAGE (real browser storage — this is a
+// downloadable static site, not a Claude artifact preview, so persisting
+// a person's plan, exclusions and theme across visits is safe here) ----------------
+const STORE = {
+  LAST_PLAN: 'bwcs_last_plan',
+  MY_PLANS: 'bwcs_my_plans',
+  EXCLUDED: 'bwcs_excluded_dishes',
+  THEME: 'bwcs_theme',
+};
+function storageGet(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch(e){ return fallback; }
+}
+function storageSet(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); } catch(e){ /* storage full or unavailable — fail silently */ }
+}
+function storageRemove(key){
+  try{ localStorage.removeItem(key); } catch(e){ /* ignore */ }
+}
+
+let excludedDishes = new Set(storageGet(STORE.EXCLUDED, []));
 
 // ---------------- LIVE CLOCK ----------------
 function tickClock(){
@@ -126,6 +151,11 @@ wirePillGroup('dietFilter', val => state.diet = val);
 wirePillGroup('effortFilter', val => state.maxEffort = parseInt(val, 10));
 wirePillGroup('portionFilter', val => state.portion = parseInt(val, 10));
 
+document.getElementById('budgetPicksToggle').addEventListener('click', (e)=>{
+  state.budgetPicks = !state.budgetPicks;
+  e.currentTarget.dataset.active = state.budgetPicks ? 'true' : 'false';
+});
+
 document.getElementById('quickTimeOnly').addEventListener('change', e=>{
   state.quickOnly = e.target.checked;
 });
@@ -137,11 +167,12 @@ document.getElementById('quickTimeOnly').addEventListener('change', e=>{
 });
 
 document.getElementById('resetPreferencesBtn').addEventListener('click', ()=>{
-  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
+  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, budgetPicks:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
   document.querySelectorAll('#dietFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='all'));
   document.querySelectorAll('#effortFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='3'));
   document.querySelectorAll('#portionFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='2'));
   document.getElementById('quickTimeOnly').checked = false;
+  document.getElementById('budgetPicksToggle').dataset.active = 'false';
   document.getElementById('breakfastTime').value = "08:00";
   document.getElementById('lunchTime').value = "13:00";
   document.getElementById('dinnerTime').value = "20:00";
@@ -171,13 +202,30 @@ function shuffle(arr){
   return a;
 }
 
+// There's no real pricing data to work from, so this is an explicit,
+// documented estimate: more effort, more ingredients, and non-veg
+// proteins all tend to cost more than a quick, mostly-pantry veg dish.
+// It's used only to relatively rank dishes against each other for the
+// "Budget picks" filter, never shown to the person as an actual price.
+function costIndex(dish){
+  const ingredientCount = dish.ingredients ? dish.ingredients.length : 1;
+  const categoryCost = dish.category === 'non-veg' ? 2 : (dish.category === 'south-indian' ? 0.5 : 0);
+  return (dish.effort * 3) + (dish.time / 10) + ingredientCount + categoryCost;
+}
+
 function filteredPool(meal){
-  return DISHES.filter(d=>
+  let pool = DISHES.filter(d=>
     d.meal===meal &&
     (state.diet==='all' || d.category===state.diet) &&
     d.effort <= state.maxEffort &&
-    (!state.quickOnly || d.time<=20)
+    (!state.quickOnly || d.time<=20) &&
+    !excludedDishes.has(d.name)
   );
+  if(state.budgetPicks && pool.length > 1){
+    const sorted = pool.slice().sort((a,b)=> costIndex(a) - costIndex(b));
+    pool = sorted.slice(0, Math.max(1, Math.ceil(sorted.length / 2)));
+  }
+  return pool;
 }
 
 function pickWeek(pool, prevWeekPicks){
@@ -321,12 +369,35 @@ function renderSchedule(weeks){
   renderTodayCard(weeks);
 }
 
+function snapshotState(){
+  // Plain, JSON-safe copy of state (Sets/etc. would break JSON.stringify).
+  return {
+    diet: state.diet, maxEffort: state.maxEffort, portion: state.portion,
+    quickOnly: state.quickOnly, budgetPicks: state.budgetPicks, times: { ...state.times },
+  };
+}
+
+function autoSaveLastPlan(){
+  storageSet(STORE.LAST_PLAN, { weeks: lastWeeks, filters: snapshotState(), savedAt: Date.now() });
+}
+
 document.getElementById('generateBtn').addEventListener('click', ()=>{
   const weeks = generateSchedule();
   if(weeks){
     lastWeeks = weeks;
     renderSchedule(weeks);
+    autoSaveLastPlan();
   }
+});
+
+document.getElementById('clearSavedPlanBtn').addEventListener('click', ()=>{
+  storageRemove(STORE.LAST_PLAN);
+  lastWeeks = null;
+  document.getElementById('scheduleOutput').innerHTML =
+    '<div class="empty-state">Set your filters above and tap <b>Generate Month Schedule</b> to view your meal blueprint.</div>';
+  document.getElementById('todaySlot').innerHTML = '';
+  document.getElementById('floatingActionBar').classList.add('hidden');
+  showToast("Saved plan cleared", "info");
 });
 
 // Keep the "NOW" meal badge and today-highlight accurate as time passes
@@ -645,3 +716,212 @@ function renderKidsSection(){
 // Kids' Snacks & Drinks is a fixed, always-available list — render it once
 // up front so it's ready the moment someone taps the tab.
 renderKidsSection();
+
+// ---------------- SEARCH + JUMP TO TODAY ----------------
+document.getElementById('dishSearchInput').addEventListener('input', (e)=>{
+  const q = e.target.value.trim().toLowerCase();
+  const rows = document.getElementById('scheduleOutput').querySelectorAll('.meal-row');
+  if(!q){
+    rows.forEach(r => { r.classList.remove('search-match'); r.classList.remove('search-dim'); });
+    return;
+  }
+  let firstMatch = null;
+  rows.forEach(r => {
+    const nameEl = r.querySelector('.meal-name');
+    const isMatch = nameEl && nameEl.textContent.toLowerCase().includes(q);
+    r.classList.toggle('search-match', isMatch);
+    r.classList.toggle('search-dim', !isMatch);
+    if(isMatch && !firstMatch) firstMatch = r;
+  });
+  if(firstMatch && firstMatch.scrollIntoView){
+    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+document.getElementById('jumpTodayBtn').addEventListener('click', ()=>{
+  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  const todayCard = document.querySelector('.day-card.is-today');
+  const target = todayCard || document.getElementById('todaySlot');
+  if(target && target.scrollIntoView){
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
+// ---------------- THEME SWITCHER ----------------
+function applyTheme(theme){
+  if(theme === 'teal'){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+  storageSet(STORE.THEME, theme);
+}
+document.querySelectorAll('.swatch').forEach(swatch=>{
+  swatch.addEventListener('click', ()=>{
+    applyTheme(swatch.dataset.theme);
+    showToast("Theme updated", "success");
+  });
+});
+
+// ---------------- INSTALL APP (PWA) ----------------
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installAppBtn').classList.remove('hidden');
+});
+document.getElementById('installAppBtn').addEventListener('click', async ()=>{
+  if(!deferredInstallPrompt){
+    showToast("Already installed, or your browser doesn't support this", "info");
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.getElementById('installAppBtn').classList.add('hidden');
+  showToast(choice.outcome === 'accepted' ? "App installed!" : "Install dismissed", choice.outcome === 'accepted' ? "success" : "info");
+});
+window.addEventListener('appinstalled', ()=>{
+  document.getElementById('installAppBtn').classList.add('hidden');
+});
+if('serviceWorker' in navigator){
+  // Registered on load; failures (e.g. opened via file:// with no server)
+  // are swallowed since Install App simply won't be available there.
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ---------------- MY PLANS ----------------
+function renderMyPlansList(){
+  const plans = storageGet(STORE.MY_PLANS, []);
+  const list = document.getElementById('myPlansList');
+  if(plans.length === 0){
+    list.innerHTML = '<p class="my-plans-empty">No saved plans yet — generate a schedule, then tap "Save current plan".</p>';
+    return;
+  }
+  list.innerHTML = plans.map((p, i) => `
+    <div class="plan-item">
+      <div class="plan-info">
+        <p class="plan-name">${p.name}</p>
+        <p class="plan-meta">${new Date(p.savedAt).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'})}</p>
+      </div>
+      <div class="plan-actions">
+        <button class="plan-load-btn" data-index="${i}">Load</button>
+        <button class="plan-delete-btn" data-index="${i}">Delete</button>
+      </div>
+    </div>`).join('');
+
+  list.querySelectorAll('.plan-load-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const plan = storageGet(STORE.MY_PLANS, [])[parseInt(btn.dataset.index, 10)];
+      if(!plan) return;
+      lastWeeks = plan.weeks;
+      renderSchedule(lastWeeks);
+      autoSaveLastPlan();
+      closeModal('myPlansModal');
+      showToast(`Loaded "${plan.name}"`, "success");
+    });
+  });
+  list.querySelectorAll('.plan-delete-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const plans = storageGet(STORE.MY_PLANS, []);
+      plans.splice(parseInt(btn.dataset.index, 10), 1);
+      storageSet(STORE.MY_PLANS, plans);
+      renderMyPlansList();
+      showToast("Plan deleted", "info");
+    });
+  });
+}
+
+document.getElementById('openMyPlansBtn').addEventListener('click', ()=>{
+  renderMyPlansList();
+  openModal('myPlansModal');
+});
+
+document.getElementById('savePlanBtn').addEventListener('click', ()=>{
+  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  const name = (typeof prompt === 'function') ? prompt("Name this plan:", "My plan " + new Date().toLocaleDateString()) : null;
+  if(!name) return;
+  const plans = storageGet(STORE.MY_PLANS, []);
+  plans.unshift({ name, weeks: lastWeeks, filters: snapshotState(), savedAt: Date.now() });
+  storageSet(STORE.MY_PLANS, plans);
+  renderMyPlansList();
+  showToast("Plan saved!", "success");
+});
+
+// ---------------- EXCLUDED DISHES ----------------
+function renderExcludedList(){
+  const content = document.getElementById('excludedListContent');
+  const meals = ['breakfast', 'lunch', 'dinner'];
+  const mealLabel = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+  let html = '';
+  meals.forEach(meal=>{
+    const dishes = DISHES.filter(d => d.meal === meal);
+    html += `<p class="excluded-group-label">${mealLabel[meal]}</p>`;
+    html += dishes.map(d => `
+      <label class="excluded-item">
+        <input type="checkbox" class="exclude-checkbox" data-name="${d.name}" ${excludedDishes.has(d.name) ? 'checked' : ''} />
+        <span class="ex-name">${d.name}</span>
+      </label>`).join('');
+  });
+  content.innerHTML = html;
+  content.querySelectorAll('.exclude-checkbox').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) excludedDishes.add(cb.dataset.name);
+      else excludedDishes.delete(cb.dataset.name);
+      storageSet(STORE.EXCLUDED, [...excludedDishes]);
+    });
+  });
+}
+document.getElementById('openExcludedBtn').addEventListener('click', ()=>{
+  renderExcludedList();
+  openModal('excludedModal');
+});
+
+// ---------------- SHARE THIS APP / COPY LINK ----------------
+document.getElementById('shareAppBtn').addEventListener('click', ()=>{
+  const url = window.location.href;
+  if(navigator.share){
+    navigator.share({ title: "Busywomen Cook Schedule", url }).catch((err)=>{
+      if(err && err.name === 'AbortError') return;
+    });
+  } else {
+    shareOrCopyText("Busywomen Cook Schedule", url).then(()=> showToast("Link copied to clipboard!", "success"))
+      .catch(()=> showManualCopyFallback(url));
+  }
+});
+document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
+  const url = window.location.href;
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(url) : execCommandCopy(url))
+    .then(()=> showToast("Link copied to clipboard!", "success"))
+    .catch(()=> showToast("Couldn't copy the link", "error"));
+});
+
+// ---------------- RESTORE ON LOAD ----------------
+(function restoreOnLoad(){
+  const savedTheme = storageGet(STORE.THEME, 'teal');
+  applyTheme(savedTheme);
+
+  const saved = storageGet(STORE.LAST_PLAN, null);
+  if(saved && saved.weeks && saved.filters){
+    state.diet = saved.filters.diet;
+    state.maxEffort = saved.filters.maxEffort;
+    state.portion = saved.filters.portion;
+    state.quickOnly = saved.filters.quickOnly;
+    state.budgetPicks = saved.filters.budgetPicks || false;
+    state.times = saved.filters.times || state.times;
+
+    document.querySelectorAll('#dietFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === state.diet));
+    document.querySelectorAll('#effortFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === String(state.maxEffort)));
+    document.querySelectorAll('#portionFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === String(state.portion)));
+    document.getElementById('quickTimeOnly').checked = state.quickOnly;
+    document.getElementById('budgetPicksToggle').dataset.active = state.budgetPicks ? 'true' : 'false';
+    document.getElementById('breakfastTime').value = state.times.breakfast;
+    document.getElementById('lunchTime').value = state.times.lunch;
+    document.getElementById('dinnerTime').value = state.times.dinner;
+
+    lastWeeks = saved.weeks;
+    renderSchedule(lastWeeks);
+    showToast("Restored your last plan", "info");
+  }
+})();
