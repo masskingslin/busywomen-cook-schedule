@@ -76,3 +76,22 @@ The small confirmation pop-ups (e.g. "Schedule generated!", "Copied!") had two r
   2. The Clipboard API (silent copy).
   3. The legacy `execCommand('copy')` trick, for contexts where the Clipboard API doesn't exist.
   4. As an absolute last resort, a **visible, pre-selected text box** appears right in the grocery modal so you can select and copy by hand — instead of just being told to "copy manually" with nothing to copy from.
+
+## v3 upgrade: overlap fix + search, themes, install, saved plans
+
+### Bug fixed: cream panel overlapping the tab bar
+`.controls-card` (the "Build your month" panel) had `margin: -16px ...` — written back when it sat directly under the dark hero, to tuck it neatly under the hero's bottom edge. Once a tab bar ("📅 Meal Schedule" / "🧒 Kids' Best Deals") was added between the hero and this panel, that same negative margin pulled the panel up over the tab buttons instead, covering them. Changed to a normal positive top margin.
+
+### New features
+- **🔍 Search** — a "Find a dish in your plan" box above the schedule highlights every matching meal across all 4 weeks and scrolls to the first match as you type.
+- **📍 Today** — jumps straight to today's highlighted day-card.
+- **💰 Budget picks** — a toggle that, once your other filters are applied, keeps only the cheaper half of the remaining dishes per meal. There's no real pricing data behind this (nothing in the app has actual grocery prices), so it's a transparent, documented estimate — `costIndex()` in `js/app.js` — based on effort level, prep time, ingredient count, and whether the dish is non-veg. It's for relative ranking only, never shown as an actual price.
+- **🎨 Theme switcher** — 4 color presets (Teal, Berry, Ocean, Mono) via the swatches under the live clock. Only the accent palette changes; layout and readability stay the same. Your choice is remembered.
+- **📲 Install App** — a real installable PWA now (`manifest.json` + `sw.js`). The button only appears when the browser actually supports installing (Chrome/Edge/Android; iOS Safari doesn't support the install-prompt API and won't show it — use Safari's own "Add to Home Screen" there instead).
+- **📚 My Plans** — save the currently-generated month under a name, and load or delete saved plans later, independent of the single auto-saved "current" plan.
+- **🚫 Excluded dishes** — check off any dish (allergy, picky eater, whatever) to permanently remove it from every future "Generate Month Schedule," across all tabs and filters.
+- **🗑️ Clear saved plan** — wipes the auto-saved current plan and resets the screen to empty. Separate from "My Plans," which it does not touch.
+- **📣 Share this app / 🔗 Copy link** — in the footer, for sending the page itself to someone else.
+- **Persistence** — the current plan, your theme choice, and your excluded-dishes list are now saved in the browser's `localStorage` and restored automatically next time you open the app. (This only applies to this downloadable site — not to a preview rendered inside a chat conversation.)
+
+All of the above were run through an automated regression suite (21 checks covering theme switching, budget-picks filtering, exclusion actually removing a dish from a freshly generated schedule, save/load, clear, search/jump smoke tests, and restoring a saved plan on load) before being shipped.

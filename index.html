@@ -1,55 +1,15 @@
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Busywomen Cook Schedule</title>
-  <meta name="description" content="Build your custom monthly meal plan in seconds — veg, non-veg, or South Indian, matched to your effort level and time. Free breakfast, lunch & dinner calendar with grocery lists." />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://masskingslin.github.io/busywomen-cook-schedule/" />
-
-  <!-- Open Graph / WhatsApp, Facebook, Telegram preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://masskingslin.github.io/busywomen-cook-schedule/" />
-  <meta property="og:title" content="Busywomen Cook Schedule — Build Your Month" />
-  <meta property="og:description" content="Set your diet, effort level & time — get a full 4-week meal calendar, grocery lists, and batch-prep plans. No repeats, zero planning stress." />
-  <meta property="og:image" content="https://masskingslin.github.io/busywomen-cook-schedule/og-image.jpg" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-
-  <!-- Twitter/X card (also used by some link-preview bots) -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Busywomen Cook Schedule — Build Your Month" />
-  <meta name="twitter:description" content="Set your diet, effort level & time — get a full 4-week meal calendar, grocery lists, and batch-prep plans." />
-  <meta name="twitter:image" content="https://masskingslin.github.io/busywomen-cook-schedule/og-image.jpg" />
-
-  <link rel="stylesheet" href="css/fonts.css">
-  <link rel="stylesheet" href="css/styles.css" />
-
-  <!-- PWA: installable on Android/iOS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=3" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#1B5450" />
-  <link rel="icon" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Cook Schedule" />
-
-  <!-- Structured data: helps Google show this as a rich app/tool result -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Busywomen Cook Schedule",
-    "url": "https://masskingslin.github.io/busywomen-cook-schedule/",
-    "description": "Build a custom 4-week meal plan — veg, non-veg, or South Indian — matched to your cooking effort and time, with grocery lists and prep guides.",
-    "applicationCategory": "LifestyleApplication",
-    "operatingSystem": "Android, iOS, Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
-    "inLanguage": "en-IN"
-  }
-  </script>
+  <meta name="theme-color" content="#123B3A" />
 </head>
 <body>
   <div class="app-container">
@@ -73,36 +33,36 @@
         <span class="live-time" id="liveTime"></span>
       </div>
 
-      <div class="theme-switcher" id="themeSwitcher">
+      <div class="theme-row">
         <span class="theme-label">Theme</span>
-        <button type="button" class="theme-swatch active" data-theme="teal" style="background:#1B5450" aria-label="Teal & Turmeric theme"></button>
-        <button type="button" class="theme-swatch" data-theme="berry" style="background:#5C1B38" aria-label="Berry & Rose theme"></button>
-        <button type="button" class="theme-swatch" data-theme="ocean" style="background:#0F4C5C" aria-label="Ocean & Mint theme"></button>
-        <button type="button" class="theme-swatch" data-theme="night" style="background:#0D1413" aria-label="Night (dark) theme"></button>
+        <div class="theme-swatches" id="themeSwatches">
+          <button type="button" class="swatch swatch-teal active" data-theme="teal" aria-label="Teal theme"></button>
+          <button type="button" class="swatch swatch-berry" data-theme="berry" aria-label="Berry theme"></button>
+          <button type="button" class="swatch swatch-ocean" data-theme="ocean" aria-label="Ocean theme"></button>
+          <button type="button" class="swatch swatch-mono" data-theme="mono" aria-label="Mono theme"></button>
+        </div>
+        <button type="button" id="installAppBtn" class="install-btn hidden">📲 Install App</button>
       </div>
-
-      <button type="button" id="installAppBtn" class="install-app-btn hidden">📲 Install App</button>
     </header>
 
+    <!-- Tabs: Meal Schedule vs Kids' Best Deals -->
     <div class="tab-bar">
-      <button type="button" class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
-      <button type="button" class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Best Deals</button>
+      <button class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
+      <button class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Best Deals</button>
     </div>
 
-    <div id="kidsView" style="display:none;"></div>
+    <div id="scheduleView">
+    <div id="todaySlot"></div>
 
-    <main class="planner-layout" id="scheduleView">
-
-      <!-- Today at a glance: visible the instant a plan exists, no scrolling needed -->
-      <div id="todayHighlight" class="today-highlight hidden"></div>
+    <main class="planner-layout">
       <!-- Filter & Configuration Controls -->
       <section class="controls-card">
-        <div class="label-header-row">
+        <div class="controls-head-row">
           <h2>Build your month</h2>
-          <div class="header-actions">
-            <button type="button" id="openLibraryBtn" class="text-action-btn">📚 My Plans</button>
-            <button type="button" id="openExcludedBtn" class="text-action-btn hidden">🚫 Excluded dishes</button>
-            <button type="button" id="clearSavedPlanBtn" class="text-action-btn hidden">🗑 Clear saved plan</button>
+          <div class="controls-head-links">
+            <button type="button" id="openMyPlansBtn" class="text-action-btn">📚 My Plans</button>
+            <button type="button" id="openExcludedBtn" class="text-action-btn">🚫 Excluded dishes</button>
+            <button type="button" id="clearSavedPlanBtn" class="text-action-btn">🗑️ Clear saved plan</button>
           </div>
         </div>
 
@@ -155,23 +115,30 @@
           </div>
         </div>
 
-        <div class="control-group">
-          <div class="pill-selector" id="quickOnlyFilter">
-            <button type="button" class="pill" data-value="quick">Quick only (≤20 min)</button>
-          </div>
-          <div class="pill-selector" id="budgetOnlyFilter">
-            <button type="button" class="pill" data-value="budget">💰 Budget picks (cheaper half of matching dishes)</button>
-          </div>
+        <div class="control-group inline-toggle">
+          <label class="switch-label">
+            <input type="checkbox" id="quickTimeOnly" />
+            <span class="slider"></span>
+            <span class="switch-text">⏱ Quick only (≤20 min)</span>
+          </label>
         </div>
 
+        <div class="control-group">
+          <button type="button" id="budgetPicksToggle" class="pill budget-pill" data-active="false">
+            💰 Budget picks (cheaper half of matching dishes)
+          </button>
+        </div>
 
         <button id="generateBtn" class="primary-btn">Generate Month Schedule</button>
       </section>
 
-      <!-- Plan toolbar: search dishes + jump to today -->
-      <div id="planToolbar" class="plan-toolbar hidden">
-        <input type="search" id="planSearch" placeholder="🔍 Find a dish in your plan (e.g. biryani)" aria-label="Search dishes in your plan" />
-        <button type="button" id="jumpTodayBtn" class="jump-today-btn">📍 Today</button>
+      <!-- Search + jump-to-today -->
+      <div class="search-row">
+        <div class="search-field">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="dishSearchInput" placeholder="Find a dish in your plan" />
+        </div>
+        <button type="button" id="jumpTodayBtn" class="today-jump-btn">📍 Today</button>
       </div>
 
       <!-- Schedule Results -->
@@ -181,6 +148,9 @@
         </div>
       </section>
     </main>
+    </div>
+
+    <div id="kidsView" style="display:none;"></div>
 
     <!-- Floating Quick Actions Bar -->
     <aside id="floatingActionBar" class="floating-actions hidden">
@@ -192,15 +162,6 @@
       </button>
       <button id="shareWhatsAppBtn" class="action-btn">
         💬 <span>Share Plan</span>
-      </button>
-      <button id="shareWeekBtn" class="action-btn">
-        📆 <span>Share Week</span>
-      </button>
-      <button id="printPlanBtn" class="action-btn">
-        🖨 <span>Print Plan</span>
-      </button>
-      <button id="openFeedbackBtn" class="action-btn">
-        💌 <span>Feedback</span>
       </button>
       <div class="calendar-export-group">
         <select id="reminderInterval" class="reminder-select" aria-label="Set reminder alert">
@@ -224,12 +185,13 @@
           <button class="close-modal" data-target="groceryModal">&times;</button>
         </div>
         <p class="modal-sub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
-        <p id="groceryTotal" class="grocery-total"></p>
         <div id="groceryListContent" class="grocery-grid"></div>
+        <div id="manualCopyBox" class="manual-copy-box hidden">
+          <p class="manual-copy-label">Auto-copy isn't available here — tap the list below, select all, then copy:</p>
+          <textarea id="manualCopyText" class="manual-copy-textarea" readonly rows="6"></textarea>
+        </div>
         <div class="modal-footer">
-          <button id="clearGroceryChecksBtn" class="secondary-btn">↺ Clear ticks</button>
-          <button id="copyGroceryBtn" class="secondary-btn">📋 Copy</button>
-          <button id="printGroceryBtn" class="secondary-btn">🖨 Print</button>
+          <button id="copyGroceryBtn" class="secondary-btn">📤 Share / Copy</button>
           <button class="primary-btn close-modal" data-target="groceryModal">Done</button>
         </div>
       </div>
@@ -250,33 +212,30 @@
       </div>
     </div>
 
-    <!-- Modal Drawer: Excluded Dishes -->
-    <!-- Modal Drawer: Plan Library (multiple named saved plans) -->
-    <div id="planLibraryModal" class="modal-overlay hidden">
+    <!-- Modal Drawer: My Plans -->
+    <div id="myPlansModal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
           <h3>My Plans</h3>
-          <button class="close-modal" data-target="planLibraryModal">&times;</button>
+          <button class="close-modal" data-target="myPlansModal">&times;</button>
         </div>
-        <p class="modal-sub">Keep a few named plans side by side — e.g. "October" and "Diwali week" — separate from the one plan that auto-restores when you reopen the app.</p>
-        <div class="save-as-row">
-          <input type="text" id="planLibraryName" placeholder="Name this plan (e.g. October)" maxlength="40" />
-          <button type="button" id="saveToLibraryBtn" class="primary-btn">💾 Save current</button>
-        </div>
-        <div id="planLibraryList" class="plan-library-list"></div>
+        <p class="modal-sub">Save your current month so you can come back to it later, even after generating a new one.</p>
+        <button type="button" id="savePlanBtn" class="secondary-btn full-width">💾 Save current plan</button>
+        <div id="myPlansList" class="my-plans-list"></div>
         <div class="modal-footer">
-          <button class="primary-btn close-modal" data-target="planLibraryModal">Done</button>
+          <button class="primary-btn close-modal" data-target="myPlansModal">Done</button>
         </div>
       </div>
     </div>
 
+    <!-- Modal Drawer: Excluded Dishes -->
     <div id="excludedModal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
           <h3>Excluded Dishes</h3>
           <button class="close-modal" data-target="excludedModal">&times;</button>
         </div>
-        <p class="modal-sub">These dishes were marked "never show again" and are skipped when building or swapping meals.</p>
+        <p class="modal-sub">Dishes you check here are left out of every future "Generate Month Schedule" — handy for allergies or things your family just won't eat.</p>
         <div id="excludedListContent" class="excluded-list"></div>
         <div class="modal-footer">
           <button class="primary-btn close-modal" data-target="excludedModal">Done</button>
@@ -284,47 +243,19 @@
       </div>
     </div>
 
-    <!-- Modal Drawer: Feedback -->
-    <div id="feedbackModal" class="modal-overlay hidden">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>Send Feedback</h3>
-          <button class="close-modal" data-target="feedbackModal">&times;</button>
-        </div>
-        <p class="modal-sub">Found a bug, missing a dish, or have an idea? Tell us — it goes straight to our inbox.</p>
-        <div class="feedback-form">
-          <label for="feedbackName">Your name (optional)</label>
-          <input type="text" id="feedbackName" placeholder="e.g. Priya" />
-          <label for="feedbackMessage">Your message</label>
-          <textarea id="feedbackMessage" rows="5" placeholder="What's working, what's not, what should we add?"></textarea>
-          <input type="text" id="feedbackWebsite" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        </div>
-        <div class="modal-footer">
-          <button id="copyFeedbackBtn" class="secondary-btn">📋 Copy Message</button>
-          <button id="sendFeedbackBtn" class="primary-btn">✉️ Send Feedback</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Toast Notification Banner -->
-    <div id="toast" class="toast hidden" role="status" aria-live="polite">
-      <span id="toastMessage"></span>
-      <button type="button" id="toastActionBtn" class="toast-action hidden"></button>
-    </div>
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
     <footer class="site-footer">
-      <div class="share-app-row">
-        <button type="button" id="shareAppBtn" class="text-action-btn">📣 Share this app</button>
-        <button type="button" id="copyAppLinkBtn" class="text-action-btn">🔗 Copy link</button>
-      </div>
+      <button type="button" id="shareAppBtn" class="footer-link-btn">📣 Share this app</button>
+      &middot;
+      <button type="button" id="copyLinkBtn" class="footer-link-btn">🔗 Copy link</button><br>
       BUSYWOMEN COOK SCHEDULE · PLAN ONCE, COOK ALL MONTH<br>
       As an Amazon Associate, this app earns from qualifying purchases
-      <div id="visitCounter" class="visit-counter hidden"></div>
     </footer>
   </div>
 
-  <script src="js/data.js"></script>
-  <script src="js/recipes.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>
