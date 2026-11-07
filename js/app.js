@@ -7,6 +7,7 @@ let state = {
   maxEffort: 3,
   portion: 2,
   quickOnly: false,
+  lightOnly: false,
   budgetPicks: false,
   times: { breakfast: "08:00", lunch: "13:00", dinner: "20:00" },
 };
@@ -21,6 +22,8 @@ const STORE = {
   MY_PLANS: 'bwcs_my_plans',
   EXCLUDED: 'bwcs_excluded_dishes',
   THEME: 'bwcs_theme',
+  CUSTOM_COLOR: 'bwcs_custom_color',
+  LANG: 'bwcs_lang',
 };
 function storageGet(key, fallback){
   try{
@@ -36,6 +39,69 @@ function storageRemove(key){
 }
 
 let excludedDishes = new Set(storageGet(STORE.EXCLUDED, []));
+
+// ---------------- i18n ----------------
+// Scope (see js/i18n.js): interface chrome is translated into English,
+// Hindi and Tamil. Dish names, ingredient lists and the generated Sunday-prep
+// tips deliberately stay in English — a wrong ingredient name in a cooking
+// app misleads someone at the grocery store, so those aren't guessed at.
+let currentLang = 'en';
+let CURRENT_MEAL_LABELS = Object.assign({}, MEAL_LABELS_I18N.en);
+// Translation values that intentionally contain markup (a <b> around a number).
+const HTML_I18N_KEYS = new Set(['effortLegend1','effortLegend2','effortLegend3']);
+
+function t(key){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  return (key in dict) ? dict[key] : (TRANSLATIONS.en[key] || key);
+}
+function translatedDayName(englishDay){
+  const idx = DAY_NAMES.indexOf(englishDay);
+  const list = DAY_NAMES_I18N[currentLang] || DAY_NAMES_I18N.en;
+  return idx >= 0 ? list[idx] : englishDay;
+}
+function dateLocale(){ return currentLang === 'hi' ? 'hi-IN' : (currentLang === 'ta' ? 'ta-IN' : undefined); }
+function emptyStateHTML(){
+  return `<div class="empty-state" id="scheduleEmptyState">${t('emptyState').replace('{generate}', `<b>${t('generateBtn')}</b>`)}</div>`;
+}
+
+function applyLanguage(lang){
+  currentLang = TRANSLATIONS[lang] ? lang : 'en';
+  document.documentElement.lang = currentLang;
+  storageSet(STORE.LANG, currentLang);
+
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(HTML_I18N_KEYS.has(key)) el.innerHTML = t(key);
+    else el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    const isActive = b.dataset.lang === currentLang;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
+
+  // Labels read by rendering functions elsewhere in this file. CAT_LABEL
+  // lives in data.js and is mutated in place so every existing
+  // CAT_LABEL[...] lookup picks up the new language automatically.
+  CURRENT_MEAL_LABELS = Object.assign({}, (MEAL_LABELS_I18N[currentLang] || MEAL_LABELS_I18N.en));
+  Object.assign(CAT_LABEL, CAT_LABEL_I18N[currentLang] || CAT_LABEL_I18N.en);
+
+  // Re-render whatever is already on screen so the switch is visible at once.
+  if(lastWeeks){
+    renderSchedule(lastWeeks);
+  } else {
+    document.getElementById('scheduleOutput').innerHTML = emptyStateHTML();
+  }
+  renderKidsSection();
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> applyLanguage(btn.dataset.lang));
+});
 
 // ---------------- LIVE CLOCK ----------------
 function tickClock(){
@@ -137,12 +203,32 @@ function processToastQueue(){
 }
 
 // ---------------- PILL SELECTORS (single-select groups) ----------------
+// Keeps the visual .active class and the aria-checked state in sync in one
+// place, since several spots (reset defaults, restoring a saved plan) set
+// pill state programmatically rather than through a click.
+function setPillGroupValue(containerId, matchValue){
+  document.querySelectorAll(`#${containerId} .pill`).forEach(b=>{
+    const isActive = b.dataset.value === matchValue;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
+}
+function setBudgetPicksValue(isOn){
+  const btn = document.getElementById('budgetPicksToggle');
+  btn.dataset.active = isOn ? 'true' : 'false';
+  btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+}
+
 function wirePillGroup(containerId, onSelect){
   const container = document.getElementById(containerId);
   container.querySelectorAll('.pill').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      container.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+      container.querySelectorAll('.pill').forEach(b=>{
+        b.classList.remove('active');
+        b.setAttribute('aria-checked', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
       onSelect(btn.dataset.value);
     });
   });
@@ -154,10 +240,15 @@ wirePillGroup('portionFilter', val => state.portion = parseInt(val, 10));
 document.getElementById('budgetPicksToggle').addEventListener('click', (e)=>{
   state.budgetPicks = !state.budgetPicks;
   e.currentTarget.dataset.active = state.budgetPicks ? 'true' : 'false';
+  e.currentTarget.setAttribute('aria-pressed', state.budgetPicks ? 'true' : 'false');
 });
 
 document.getElementById('quickTimeOnly').addEventListener('change', e=>{
   state.quickOnly = e.target.checked;
+});
+
+document.getElementById('lightMealsOnly').addEventListener('change', e=>{
+  state.lightOnly = e.target.checked;
 });
 
 ['breakfast','lunch','dinner'].forEach(meal=>{
@@ -167,16 +258,17 @@ document.getElementById('quickTimeOnly').addEventListener('change', e=>{
 });
 
 document.getElementById('resetPreferencesBtn').addEventListener('click', ()=>{
-  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, budgetPicks:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
-  document.querySelectorAll('#dietFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='all'));
-  document.querySelectorAll('#effortFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='3'));
-  document.querySelectorAll('#portionFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value==='2'));
+  state = { diet:"all", maxEffort:3, portion:2, quickOnly:false, lightOnly:false, budgetPicks:false, times:{breakfast:"08:00", lunch:"13:00", dinner:"20:00"} };
+  setPillGroupValue('dietFilter', 'all');
+  setPillGroupValue('effortFilter', '3');
+  setPillGroupValue('portionFilter', '2');
   document.getElementById('quickTimeOnly').checked = false;
-  document.getElementById('budgetPicksToggle').dataset.active = 'false';
+  document.getElementById('lightMealsOnly').checked = false;
+  setBudgetPicksValue(false);
   document.getElementById('breakfastTime').value = "08:00";
   document.getElementById('lunchTime').value = "13:00";
   document.getElementById('dinnerTime').value = "20:00";
-  showToast("Preferences reset to defaults", "info");
+  showToast(t('toastPrefsReset'), "info");
 });
 
 // ---------------- TODAY MAPPING ----------------
@@ -219,6 +311,7 @@ function filteredPool(meal){
     (state.diet==='all' || d.category===state.diet) &&
     d.effort <= state.maxEffort &&
     (!state.quickOnly || d.time<=20) &&
+    (!state.lightOnly || d.calories<300) &&
     !excludedDishes.has(d.name)
   );
   if(state.budgetPicks && pool.length > 1){
@@ -262,9 +355,9 @@ function generateSchedule(){
 
   if(pools.breakfast.length===0 || pools.lunch.length===0 || pools.dinner.length===0){
     document.getElementById('scheduleOutput').innerHTML =
-      '<div class="empty-state">No dishes match this combination of filters. Try loosening a filter.</div>';
+      `<div class="empty-state">${t('toastNoMatch')}</div>`;
     document.getElementById('floatingActionBar').classList.add('hidden');
-    showToast("No matching dishes — widen your filters", "error");
+    showToast(t('toastNoMatch'), "error");
     return null;
   }
 
@@ -289,7 +382,7 @@ function generateSchedule(){
   if(insufficient.length){
     showToast("Heads up: limited dishes for " + insufficient.join(", ") + " — some repeats may occur", "error");
   } else {
-    showToast("4-week schedule generated!", "success");
+    showToast(t('toastScheduleGenerated'), "success");
   }
   return weeks;
 }
@@ -299,15 +392,15 @@ function dishRowHTML(label, dish, mealKey, currentMeal){
   if(!dish) return '';
   const isNow = mealKey && mealKey===currentMeal;
   const ingredientsPreview = (!dish.readymade && dish.ingredients && dish.ingredients.length)
-    ? `<p class="ingredients-list">Needs: ${dish.ingredients.map(i=>i.name).join(", ")}</p>`
+    ? `<p class="ingredients-list">${t('needsPrefix')} ${dish.ingredients.map(i=>i.name).join(", ")}</p>`
     : '';
   const buyRow = dish.readymade
     ? `<div class="buy-row">
-         <a class="buy-btn readymade" href="${shopLinkProduct(dish.name)}" target="_blank" rel="noopener sponsored">📦 Buy ${dish.name}</a>
+         <a class="buy-btn readymade" href="${shopLinkProduct(dish.name)}" target="_blank" rel="noopener sponsored">📦 ${dish.name}</a>
        </div>`
     : `<div class="buy-row">
-         <a class="buy-btn readymade" href="${shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored">📦 Ready-made</a>
-         <a class="buy-btn ingredients" href="${shopLinkIngredients(dish)}" target="_blank" rel="noopener sponsored">🛒 Ingredients</a>
+         <a class="buy-btn readymade" href="${shopLinkReadymade(dish.name)}" target="_blank" rel="noopener sponsored">${t('readymadeBtn')}</a>
+         <a class="buy-btn ingredients" href="${shopLinkIngredients(dish)}" target="_blank" rel="noopener sponsored">${t('ingredientsBtn')}</a>
        </div>`;
   return `
     <div class="meal-row${isNow ? ' current':''}">
@@ -316,10 +409,11 @@ function dishRowHTML(label, dish, mealKey, currentMeal){
         <div class="meal-main">
           <p class="meal-name">${dish.name}</p>
           <div class="meal-meta">
-            ${dish.readymade ? '<span class="tag readymade">📦 Ready-made</span>' : ''}
+            ${dish.readymade ? `<span class="tag readymade">${t('readymadeTag')}</span>` : ''}
             <span class="tag ${dish.category}">${CAT_LABEL[dish.category]}</span>
             <span class="peppers">${PEPPER[dish.effort]}</span>
             <span class="time-badge">⏱ ${dish.time} min</span>
+            <span class="cal-badge">🔥 ${dish.calories} kcal</span>
           </div>
           ${ingredientsPreview}
         </div>
@@ -335,16 +429,16 @@ function renderTodayCard(weeks){
   const week = weeks[info.weekIndex];
   const today = week ? week[info.dayIndex] : null;
   if(!today){ slot.innerHTML = ''; return; }
-  const dateStr = info.now.toLocaleDateString(undefined, {month:'long', day:'numeric', year:'numeric'});
+  const dateStr = info.now.toLocaleDateString(dateLocale(), {month:'long', day:'numeric', year:'numeric'});
   slot.innerHTML = `
     <div class="today-card">
       <div class="today-head">
-        <p class="eyebrow">Today &middot; ${today.day}</p>
+        <p class="eyebrow">${t('todayEyebrow')} &middot; ${translatedDayName(today.day)}</p>
         <span class="today-date">${dateStr}</span>
       </div>
-      ${dishRowHTML('Breakfast', today.breakfast, 'breakfast', info.currentMeal)}
-      ${dishRowHTML('Lunch', today.lunch, 'lunch', info.currentMeal)}
-      ${dishRowHTML('Dinner', today.dinner, 'dinner', info.currentMeal)}
+      ${dishRowHTML(CURRENT_MEAL_LABELS.breakfast, today.breakfast, 'breakfast', info.currentMeal)}
+      ${dishRowHTML(CURRENT_MEAL_LABELS.lunch, today.lunch, 'lunch', info.currentMeal)}
+      ${dishRowHTML(CURRENT_MEAL_LABELS.dinner, today.dinner, 'dinner', info.currentMeal)}
     </div>`;
 }
 
@@ -353,14 +447,14 @@ function renderSchedule(weeks){
   const info = getTodayInfo();
   let html = '';
   weeks.forEach((days, wi)=>{
-    html += `<div class="week-head"><span class="wk-num">Week ${wi+1}</span><span class="wk-label">7 days &middot; no repeats</span><hr></div>`;
+    html += `<div class="week-head"><span class="wk-num">${t('weekWord')} ${wi+1}</span><span class="wk-label">${t('weekSub')}</span><hr></div>`;
     days.forEach((d, di)=>{
       const isToday = wi===info.weekIndex && di===info.dayIndex;
       html += `<div class="day-card${isToday ? ' is-today':''}">
-        <div class="day-title">${d.day}</div>
-        ${dishRowHTML('Breakfast', d.breakfast)}
-        ${dishRowHTML('Lunch', d.lunch)}
-        ${dishRowHTML('Dinner', d.dinner)}
+        <div class="day-title"${isToday ? ` data-today-tag=" ${t('todayTag')}"` : ''}>${translatedDayName(d.day)}</div>
+        ${dishRowHTML(CURRENT_MEAL_LABELS.breakfast, d.breakfast)}
+        ${dishRowHTML(CURRENT_MEAL_LABELS.lunch, d.lunch)}
+        ${dishRowHTML(CURRENT_MEAL_LABELS.dinner, d.dinner)}
       </div>`;
     });
   });
@@ -373,7 +467,7 @@ function snapshotState(){
   // Plain, JSON-safe copy of state (Sets/etc. would break JSON.stringify).
   return {
     diet: state.diet, maxEffort: state.maxEffort, portion: state.portion,
-    quickOnly: state.quickOnly, budgetPicks: state.budgetPicks, times: { ...state.times },
+    quickOnly: state.quickOnly, lightOnly: state.lightOnly, budgetPicks: state.budgetPicks, times: { ...state.times },
   };
 }
 
@@ -393,11 +487,10 @@ document.getElementById('generateBtn').addEventListener('click', ()=>{
 document.getElementById('clearSavedPlanBtn').addEventListener('click', ()=>{
   storageRemove(STORE.LAST_PLAN);
   lastWeeks = null;
-  document.getElementById('scheduleOutput').innerHTML =
-    '<div class="empty-state">Set your filters above and tap <b>Generate Month Schedule</b> to view your meal blueprint.</div>';
+  document.getElementById('scheduleOutput').innerHTML = emptyStateHTML();
   document.getElementById('todaySlot').innerHTML = '';
   document.getElementById('floatingActionBar').classList.add('hidden');
-  showToast("Saved plan cleared", "info");
+  showToast(t('toastSavedPlanCleared'), "info");
 });
 
 // Keep the "NOW" meal badge and today-highlight accurate as time passes
@@ -406,8 +499,55 @@ setInterval(()=>{
 }, 60000);
 
 // ---------------- MODALS ----------------
-function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+// Tracks, per modal id, what had focus before it opened (so closing it can
+// put focus back) and the keydown handler currently attached (so it can be
+// removed again on close instead of piling up across repeated opens).
+const modalState = {};
+
+function getFocusable(container){
+  return [...container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null);
+}
+
+function openModal(id){
+  const modal = document.getElementById(id);
+  modalState[id] = modalState[id] || {};
+  modalState[id].trigger = document.activeElement;
+
+  modal.classList.remove('hidden');
+
+  const focusable = getFocusable(modal);
+  (focusable[0] || modal).focus();
+
+  const onKeydown = (e)=>{
+    if(e.key === 'Escape'){
+      e.preventDefault();
+      closeModal(id);
+      return;
+    }
+    if(e.key === 'Tab' && focusable.length > 0){
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if(e.shiftKey && document.activeElement === first){
+        e.preventDefault(); last.focus();
+      } else if(!e.shiftKey && document.activeElement === last){
+        e.preventDefault(); first.focus();
+      }
+    }
+  };
+  modal.addEventListener('keydown', onKeydown);
+  modalState[id].onKeydown = onKeydown;
+}
+
+function closeModal(id){
+  const modal = document.getElementById(id);
+  modal.classList.add('hidden');
+  const saved = modalState[id];
+  if(saved){
+    if(saved.onKeydown) modal.removeEventListener('keydown', saved.onKeydown);
+    if(saved.trigger && saved.trigger.focus) saved.trigger.focus();
+  }
+}
+
 document.querySelectorAll('.close-modal').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.target));
 });
@@ -443,7 +583,7 @@ function aggregateGroceries(weeks, portion){
 }
 
 function renderGroceryList(){
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const items = aggregateGroceries(lastWeeks, state.portion);
   const content = document.getElementById('groceryListContent');
   content.innerHTML = items.map(item => `
@@ -509,7 +649,7 @@ function shareOrCopyText(title, text){
 }
 
 document.getElementById('copyGroceryBtn').addEventListener('click', ()=>{
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const items = aggregateGroceries(lastWeeks, state.portion);
   const text = "Busywomen Cook Schedule — Grocery List\n" +
     items.map(i => `• ${i.name} — ${roundQty(i.qty)} ${i.unit}`).join("\n");
@@ -518,16 +658,16 @@ document.getElementById('copyGroceryBtn').addEventListener('click', ()=>{
 
   shareOrCopyText("Busywomen Cook Schedule — Grocery List", text).then((result)=>{
     if(result.via === 'share'){
-      showToast("Grocery list shared!", "success");
+      showToast(t('toastGroceryShared'), "success");
     } else {
-      showToast("Grocery list copied to clipboard!", "success");
+      showToast(t('toastGroceryCopied'), "success");
     }
   }).catch((err)=>{
     // navigator.share throws if the person just cancels the share sheet —
     // that's not a failure, so don't show an error for it.
     if(err && err.name === 'AbortError') return;
     showManualCopyFallback(text);
-    showToast("Couldn't auto-copy — select the text below", "error");
+    showToast(t('toastCopyFailed'), "error");
   });
 });
 
@@ -568,7 +708,7 @@ function generatePrepList(weeks){
 }
 
 function renderPrepList(){
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const items = generatePrepList(lastWeeks);
   const content = document.getElementById('prepListContent');
   content.innerHTML = items.map(item => `
@@ -583,20 +723,76 @@ function renderPrepList(){
 }
 document.getElementById('openPrepBtn').addEventListener('click', renderPrepList);
 
+// ---------------- NUTRITION SUMMARY ----------------
+// Estimated calories only (see costIndex() above for the same caveat on
+// "Budget picks" — no real nutrition database backs this app).
+function dayTotalCalories(day){
+  return ['breakfast','lunch','dinner'].reduce((sum, m) => sum + (day[m] ? day[m].calories : 0), 0);
+}
+
+function renderNutritionSummary(weeks){
+  const info = getTodayInfo();
+  const flatDays = [];
+  weeks.forEach((week, wi) => week.forEach((day, di) => flatDays.push({ ...day, wi, di })));
+
+  const totals = flatDays.map(d => dayTotalCalories(d));
+  const todayDay = weeks[info.weekIndex] ? weeks[info.weekIndex][info.dayIndex] : null;
+  const todayTotal = todayDay ? dayTotalCalories(todayDay) : 0;
+  const avg = totals.length ? Math.round(totals.reduce((a,b)=>a+b,0) / totals.length) : 0;
+  const maxTotal = Math.max(1, ...totals);
+
+  const statRow = `
+    <div class="nutrition-stat-row">
+      <div class="nutrition-stat"><div class="n-value">${todayTotal}</div><div class="n-label">Today (est.)</div></div>
+      <div class="nutrition-stat"><div class="n-value">${avg}</div><div class="n-label">Daily average</div></div>
+      <div class="nutrition-stat"><div class="n-value">${totals.length}</div><div class="n-label">Days planned</div></div>
+    </div>`;
+
+  const bars = flatDays.map((d, i) => {
+    const total = totals[i];
+    const isToday = d.wi === info.weekIndex && d.di === info.dayIndex;
+    const pct = Math.max(4, Math.round((total / maxTotal) * 100));
+    return `
+      <div class="nutrition-day-row${isToday ? ' is-today-row' : ''}">
+        <span class="nd-label">${d.wi+1} · ${currentLang === 'en' ? d.day.slice(0,3) : translatedDayName(d.day)}</span>
+        <span class="nd-bar-track"><span class="nd-bar-fill" style="width:${pct}%"></span></span>
+        <span class="nd-kcal">${total} kcal</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('nutritionContent').innerHTML = statRow + `<div class="nutrition-day-bars">${bars}</div>`;
+}
+
+document.getElementById('openNutritionBtn').addEventListener('click', ()=>{
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
+  renderNutritionSummary(lastWeeks);
+  openModal('nutritionModal');
+});
+
 // ---------------- WHATSAPP SHARE ----------------
 document.getElementById('shareWhatsAppBtn').addEventListener('click', ()=>{
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const info = getTodayInfo();
   const today = lastWeeks[info.weekIndex][info.dayIndex];
   const lines = [
-    "🍽️ Busywomen Cook Schedule",
-    `${today.day}'s plan:`,
-    `🍳 Breakfast: ${today.breakfast ? today.breakfast.name : '-'}`,
-    `🍛 Lunch: ${today.lunch ? today.lunch.name : '-'}`,
-    `🍲 Dinner: ${today.dinner ? today.dinner.name : '-'}`,
+    t('waTitle'),
+    t('waPlanOf').replace('{day}', translatedDayName(today.day)),
+    `🍳 ${CURRENT_MEAL_LABELS.breakfast}: ${today.breakfast ? today.breakfast.name : '-'}`,
+    `🍛 ${CURRENT_MEAL_LABELS.lunch}: ${today.lunch ? today.lunch.name : '-'}`,
+    `🍲 ${CURRENT_MEAL_LABELS.dinner}: ${today.dinner ? today.dinner.name : '-'}`,
   ];
   const url = "https://wa.me/?text=" + encodeURIComponent(lines.join("\n"));
   window.open(url, "_blank", "noopener");
+});
+
+// ---------------- PRINT / PDF ----------------
+// window.print() + the @media print stylesheet; choosing "Save as PDF" as
+// the destination in the browser's print dialog yields a real PDF.
+document.getElementById('printPlanBtn').addEventListener('click', ()=>{
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
+  document.getElementById('printGeneratedDate').textContent =
+    "Generated " + new Date().toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' });
+  window.print();
 });
 
 // ---------------- CALENDAR EXPORT (.ics) ----------------
@@ -656,7 +852,7 @@ function buildICS(weeks, reminderOffset){
 }
 
 document.getElementById('exportCalendarBtn').addEventListener('click', ()=>{
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const reminderOffset = document.getElementById('reminderInterval').value;
   const icsContent = buildICS(lastWeeks, reminderOffset);
   const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
@@ -668,7 +864,7 @@ document.getElementById('exportCalendarBtn').addEventListener('click', ()=>{
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast("Calendar file downloaded!", "success");
+  showToast(t('toastCalendarExported'), "success");
 });
 
 // ---------------- TABS: Meal Schedule vs Kids' Snacks & Drinks ----------------
@@ -684,12 +880,16 @@ function showTab(tab){
     floatingBar.classList.add('hidden');
     tabSchedule.classList.remove('active');
     tabKids.classList.add('active');
+    tabSchedule.setAttribute('aria-selected', 'false');
+    tabKids.setAttribute('aria-selected', 'true');
   } else {
     scheduleView.style.display = 'block';
     kidsView.style.display = 'none';
     if(lastWeeks) floatingBar.classList.remove('hidden');
     tabSchedule.classList.add('active');
     tabKids.classList.remove('active');
+    tabSchedule.setAttribute('aria-selected', 'true');
+    tabKids.setAttribute('aria-selected', 'false');
   }
 }
 document.getElementById('tabSchedule').addEventListener('click', ()=> showTab('schedule'));
@@ -703,13 +903,13 @@ function renderKidsSection(){
       <span class="kid-emoji">${item.emoji}</span>
       <p class="kid-name">${item.name}</p>
       <p class="kid-note">${item.note}</p>
-      <span class="tag ${item.type==='drink' ? 'south-indian':'veg'}">${item.type==='drink' ? 'Drink':'Snack'}</span>
-      <a class="buy-btn deal" href="${shopLinkDeal(item.name)}" target="_blank" rel="noopener sponsored">💸 Best Price on Amazon</a>
+      <span class="tag ${item.type==='drink' ? 'south-indian':'veg'}">${item.type==='drink' ? t('kidDrink') : t('kidSnack')}</span>
+      <a class="buy-btn deal" href="${shopLinkDeal(item.name)}" target="_blank" rel="noopener sponsored">${t('kidsBuyBtn')}</a>
     </div>`).join('');
   wrap.innerHTML = `
     <div class="kids-wrap">
-      <div class="kids-head"><span class="kids-title">Kids' Snacks &amp; Drinks</span><hr></div>
-      <p class="kids-sub">A separate healthy pick list for kids' tiffin boxes and after-school snacks. Every link is sorted lowest price first on Amazon, so you land on the cheapest deal, not just the top result.</p>
+      <div class="kids-head"><span class="kids-title">${t('kidsTitle')}</span><hr></div>
+      <p class="kids-sub">${t('kidsSub')}</p>
       <div class="kids-grid">${cards}</div>
     </div>`;
 }
@@ -721,25 +921,42 @@ renderKidsSection();
 document.getElementById('dishSearchInput').addEventListener('input', (e)=>{
   const q = e.target.value.trim().toLowerCase();
   const rows = document.getElementById('scheduleOutput').querySelectorAll('.meal-row');
+  const noResultsEl = document.getElementById('searchNoResults');
   if(!q){
     rows.forEach(r => { r.classList.remove('search-match'); r.classList.remove('search-dim'); });
+    noResultsEl.classList.add('hidden');
     return;
   }
+  let matchCount = 0;
   let firstMatch = null;
   rows.forEach(r => {
     const nameEl = r.querySelector('.meal-name');
-    const isMatch = nameEl && nameEl.textContent.toLowerCase().includes(q);
+    const ingredientsEl = r.querySelector('.ingredients-list');
+    // Matches on the dish name OR its ingredient list, so searching an
+    // ingredient (e.g. "paneer") finds every dish that uses it, not just
+    // dishes literally named that.
+    const haystack = ((nameEl ? nameEl.textContent : '') + ' ' + (ingredientsEl ? ingredientsEl.textContent : '')).toLowerCase();
+    const isMatch = haystack.includes(q);
     r.classList.toggle('search-match', isMatch);
     r.classList.toggle('search-dim', !isMatch);
-    if(isMatch && !firstMatch) firstMatch = r;
+    if(isMatch){
+      matchCount++;
+      if(!firstMatch) firstMatch = r;
+    }
   });
+  if(matchCount === 0 && rows.length > 0){
+    noResultsEl.textContent = t('searchNoMatch').replace('{q}', e.target.value.trim());
+    noResultsEl.classList.remove('hidden');
+  } else {
+    noResultsEl.classList.add('hidden');
+  }
   if(firstMatch && firstMatch.scrollIntoView){
     firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
 
 document.getElementById('jumpTodayBtn').addEventListener('click', ()=>{
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const todayCard = document.querySelector('.day-card.is-today');
   const target = todayCard || document.getElementById('todaySlot');
   if(target && target.scrollIntoView){
@@ -748,30 +965,73 @@ document.getElementById('jumpTodayBtn').addEventListener('click', ()=>{
 });
 
 // ---------------- THEME SWITCHER ----------------
-function applyTheme(theme){
+// theme is one of the preset names, or 'custom'. customColor only matters
+// when theme === 'custom' — it's kept separately so switching back to a
+// preset and then back to Custom remembers the last colour picked.
+function applyTheme(theme, customColor){
   if(theme === 'teal'){
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.removeProperty('--turmeric');
+  } else if(theme === 'custom'){
+    document.documentElement.removeAttribute('data-theme'); // base palette underneath
+    document.documentElement.style.setProperty('--turmeric', customColor || '#E7A72C');
   } else {
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.removeProperty('--turmeric');
   }
-  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+  document.querySelectorAll('.swatch').forEach(s => {
+    const isActive = s.dataset.theme === theme;
+    s.classList.toggle('active', isActive);
+    // Only the <button> swatches take aria-pressed; the Custom swatch is a
+    // <label> (its accessible state comes from the wrapped colour input).
+    if(s.tagName === 'BUTTON') s.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
   storageSet(STORE.THEME, theme);
+  if(theme === 'custom' && customColor) storageSet(STORE.CUSTOM_COLOR, customColor);
 }
+
+// Only the preset <button> swatches use a plain click; the Custom swatch is
+// a <label> wrapping a native colour <input> (so tapping it opens the
+// system colour picker), and attaching the same click handler to it would
+// double-fire with no theme name to apply. Filter it out here instead.
 document.querySelectorAll('.swatch').forEach(swatch=>{
+  if(swatch.tagName === 'LABEL') return;
   swatch.addEventListener('click', ()=>{
     applyTheme(swatch.dataset.theme);
-    showToast("Theme updated", "success");
+    showToast(t('toastThemeUpdated'), "success");
   });
+});
+document.getElementById('customColorInput').addEventListener('input', (e)=>{
+  applyTheme('custom', e.target.value);
+});
+document.getElementById('customColorInput').addEventListener('change', ()=>{
+  showToast("Custom colour applied", "success");
 });
 
 // ---------------- INSTALL APP (PWA) ----------------
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '') && !window.MSStream;
+const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+
 let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  document.getElementById('installAppBtn').classList.remove('hidden');
-});
+if(!isStandalone){
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    document.getElementById('installAppBtn').classList.remove('hidden');
+  });
+  // iOS Safari never fires beforeinstallprompt — it has no such API — so
+  // show the button with its own instructions instead of leaving it to
+  // silently never appear.
+  if(isIOS){
+    document.getElementById('installAppBtn').classList.remove('hidden');
+  }
+}
+
 document.getElementById('installAppBtn').addEventListener('click', async ()=>{
+  if(isIOS && !deferredInstallPrompt){
+    showToast("On iPhone: tap the Share icon, then 'Add to Home Screen'", "info");
+    return;
+  }
   if(!deferredInstallPrompt){
     showToast("Already installed, or your browser doesn't support this", "info");
     return;
@@ -785,11 +1045,62 @@ document.getElementById('installAppBtn').addEventListener('click', async ()=>{
 window.addEventListener('appinstalled', ()=>{
   document.getElementById('installAppBtn').classList.add('hidden');
 });
+
+// ---------------- SERVICE WORKER: offline support + opt-in updates ----------------
 if('serviceWorker' in navigator){
-  // Registered on load; failures (e.g. opened via file:// with no server)
-  // are swallowed since Install App simply won't be available there.
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.register('sw.js').then((registration)=>{
+    // A new worker already waiting (e.g. the page was reopened after an
+    // update shipped while it was closed) — offer the refresh right away.
+    if(registration.waiting){
+      offerServiceWorkerUpdate(registration);
+    }
+    registration.addEventListener('updatefound', ()=>{
+      const newWorker = registration.installing;
+      if(!newWorker) return;
+      newWorker.addEventListener('statechange', ()=>{
+        if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+          // installed + there's already a controller = this is an update,
+          // not the first-ever install, so it's worth telling the person
+          offerServiceWorkerUpdate(registration);
+        }
+      });
+    });
+  }).catch(()=>{ /* e.g. opened via file:// with no server — Install App just won't be available */ });
+
+  let hasReloadedForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(hasReloadedForUpdate) return;
+    hasReloadedForUpdate = true;
+    window.location.reload();
+  });
 }
+
+function offerServiceWorkerUpdate(registration){
+  // Deliberately not attached to the shared toast element: the toast is a
+  // queue, so by the time this one is actually on screen a different
+  // message could be showing — a click handler on the toast itself would
+  // then fire for whatever unrelated message happens to be visible. A
+  // separate, self-contained banner avoids that coupling entirely.
+  const banner = document.createElement('div');
+  banner.className = 'update-banner';
+  banner.innerHTML = '🔄 A new version is ready — <u>tap to refresh</u>';
+  banner.addEventListener('click', ()=>{
+    if(registration.waiting){
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    banner.remove();
+  });
+  document.body.appendChild(banner);
+}
+
+// ---------------- ONLINE / OFFLINE INDICATOR ----------------
+function updateOfflineIndicator(){
+  const el = document.getElementById('offlineIndicator');
+  el.classList.toggle('hidden', navigator.onLine !== false);
+}
+window.addEventListener('online', ()=>{ updateOfflineIndicator(); showToast(t('toastOnline'), "success"); });
+window.addEventListener('offline', ()=>{ updateOfflineIndicator(); showToast(t('toastOffline'), "info"); });
+updateOfflineIndicator();
 
 // ---------------- MY PLANS ----------------
 function renderMyPlansList(){
@@ -828,7 +1139,7 @@ function renderMyPlansList(){
       plans.splice(parseInt(btn.dataset.index, 10), 1);
       storageSet(STORE.MY_PLANS, plans);
       renderMyPlansList();
-      showToast("Plan deleted", "info");
+      showToast(t('toastPlanDeleted'), "info");
     });
   });
 }
@@ -839,14 +1150,89 @@ document.getElementById('openMyPlansBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('savePlanBtn').addEventListener('click', ()=>{
-  if(!lastWeeks){ showToast("Generate a schedule first", "info"); return; }
+  if(!lastWeeks){ showToast(t('toastGenerateFirst'), "info"); return; }
   const name = (typeof prompt === 'function') ? prompt("Name this plan:", "My plan " + new Date().toLocaleDateString()) : null;
   if(!name) return;
   const plans = storageGet(STORE.MY_PLANS, []);
   plans.unshift({ name, weeks: lastWeeks, filters: snapshotState(), savedAt: Date.now() });
   storageSet(STORE.MY_PLANS, plans);
   renderMyPlansList();
-  showToast("Plan saved!", "success");
+  showToast(t('toastPlanSaved'), "success");
+});
+
+// ---------------- BACKUP & RESTORE ----------------
+const BACKUP_FORMAT_VERSION = 1;
+
+document.getElementById('exportBackupBtn').addEventListener('click', ()=>{
+  const backup = {
+    app: "busywomen-cook-schedule",
+    formatVersion: BACKUP_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: {
+      lastPlan: storageGet(STORE.LAST_PLAN, null),
+      myPlans: storageGet(STORE.MY_PLANS, []),
+      excludedDishes: storageGet(STORE.EXCLUDED, []),
+      theme: storageGet(STORE.THEME, 'teal'),
+      customColor: storageGet(STORE.CUSTOM_COLOR, '#E7A72C'),
+    },
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `busywomen-cook-schedule-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(t('toastBackupDownloaded'), "success");
+});
+
+document.getElementById('importBackupBtn').addEventListener('click', ()=>{
+  document.getElementById('importBackupFile').click();
+});
+
+document.getElementById('importBackupFile').addEventListener('change', (e)=>{
+  const input = e.target;
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let backup;
+    try{ backup = JSON.parse(reader.result); }
+    catch(err){
+      showToast(t('toastBackupInvalidJson'), "error");
+      input.value = ''; return;
+    }
+    if(!backup || backup.app !== "busywomen-cook-schedule" || !backup.data){
+      showToast(t('toastBackupInvalidFormat'), "error");
+      input.value = ''; return;
+    }
+    const proceed = (typeof confirm === 'function')
+      ? confirm("Importing will replace your current saved plans, excluded dishes, and theme with what's in this backup. Continue?")
+      : true;
+    if(!proceed){ input.value = ''; return; }
+
+    const d = backup.data;
+    if(d.lastPlan) storageSet(STORE.LAST_PLAN, d.lastPlan);
+    storageSet(STORE.MY_PLANS, Array.isArray(d.myPlans) ? d.myPlans : []);
+    storageSet(STORE.EXCLUDED, Array.isArray(d.excludedDishes) ? d.excludedDishes : []);
+    storageSet(STORE.THEME, d.theme || 'teal');
+    storageSet(STORE.CUSTOM_COLOR, d.customColor || '#E7A72C');
+
+    // Apply to the running app immediately, not just to localStorage.
+    excludedDishes = new Set(Array.isArray(d.excludedDishes) ? d.excludedDishes : []);
+    applyTheme(d.theme || 'teal', d.customColor || '#E7A72C');
+    if(d.lastPlan && d.lastPlan.weeks){
+      lastWeeks = d.lastPlan.weeks;
+      renderSchedule(lastWeeks);
+    }
+    renderMyPlansList();
+    input.value = '';
+    showToast(t('toastBackupImported'), "success");
+  };
+  reader.onerror = ()=>{ showToast("Couldn't read that file", "error"); input.value = ''; };
+  reader.readAsText(file);
 });
 
 // ---------------- EXCLUDED DISHES ----------------
@@ -886,21 +1272,26 @@ document.getElementById('shareAppBtn').addEventListener('click', ()=>{
       if(err && err.name === 'AbortError') return;
     });
   } else {
-    shareOrCopyText("Busywomen Cook Schedule", url).then(()=> showToast("Link copied to clipboard!", "success"))
+    shareOrCopyText("Busywomen Cook Schedule", url).then(()=> showToast(t('toastLinkCopied'), "success"))
       .catch(()=> showManualCopyFallback(url));
   }
 });
 document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
   const url = window.location.href;
   (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(url) : execCommandCopy(url))
-    .then(()=> showToast("Link copied to clipboard!", "success"))
+    .then(()=> showToast(t('toastLinkCopied'), "success"))
     .catch(()=> showToast("Couldn't copy the link", "error"));
 });
 
 // ---------------- RESTORE ON LOAD ----------------
 (function restoreOnLoad(){
+  // Language first, so everything restored below renders in the right one.
+  applyLanguage(storageGet(STORE.LANG, 'en'));
+
   const savedTheme = storageGet(STORE.THEME, 'teal');
-  applyTheme(savedTheme);
+  const savedCustomColor = storageGet(STORE.CUSTOM_COLOR, '#E7A72C');
+  if(savedTheme === 'custom') document.getElementById('customColorInput').value = savedCustomColor;
+  applyTheme(savedTheme, savedCustomColor);
 
   const saved = storageGet(STORE.LAST_PLAN, null);
   if(saved && saved.weeks && saved.filters){
@@ -908,20 +1299,22 @@ document.getElementById('copyLinkBtn').addEventListener('click', ()=>{
     state.maxEffort = saved.filters.maxEffort;
     state.portion = saved.filters.portion;
     state.quickOnly = saved.filters.quickOnly;
+    state.lightOnly = saved.filters.lightOnly || false;
     state.budgetPicks = saved.filters.budgetPicks || false;
     state.times = saved.filters.times || state.times;
 
-    document.querySelectorAll('#dietFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === state.diet));
-    document.querySelectorAll('#effortFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === String(state.maxEffort)));
-    document.querySelectorAll('#portionFilter .pill').forEach(b=>b.classList.toggle('active', b.dataset.value === String(state.portion)));
+    setPillGroupValue('dietFilter', state.diet);
+    setPillGroupValue('effortFilter', String(state.maxEffort));
+    setPillGroupValue('portionFilter', String(state.portion));
     document.getElementById('quickTimeOnly').checked = state.quickOnly;
-    document.getElementById('budgetPicksToggle').dataset.active = state.budgetPicks ? 'true' : 'false';
+    document.getElementById('lightMealsOnly').checked = state.lightOnly;
+    setBudgetPicksValue(state.budgetPicks);
     document.getElementById('breakfastTime').value = state.times.breakfast;
     document.getElementById('lunchTime').value = state.times.lunch;
     document.getElementById('dinnerTime').value = state.times.dinner;
 
     lastWeeks = saved.weeks;
     renderSchedule(lastWeeks);
-    showToast("Restored your last plan", "info");
+    showToast(t('toastRestored'), "info");
   }
 })();
