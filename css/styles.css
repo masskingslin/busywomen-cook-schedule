@@ -5,28 +5,77 @@
   --cream:#FBF3E4;
   --turmeric:#E7A72C;
   --chili:#C1442D;
-  --leaf:#5B8C5A;
+  --leaf:#4F794E; /* darkened from #5B8C5A — the original failed WCAG AA (4.5:1)
+    both as white-on-leaf button text (3.87:1) and as leaf-colored tag text on
+    cream (3.56:1); this shade clears both (4.95 / 4.56) while staying green. */
   --ink:#1B1B16;
   --ink-soft:#5A5A50;
   --white:#FFFDF8;
 }
 /* Theme presets, applied via data-theme on <html>. Only the hero/accent
    palette changes; layout and the cream card surface stay the same so the
-   app always stays readable regardless of which theme is picked. */
+   app always stays readable regardless of which theme is picked.
+   Every accent colour below was run through an actual WCAG AA contrast
+   check (4.5:1) against how it's really used in this file — chili/leaf as
+   small text on the cream card AND as a button background under white
+   text, turmeric as a button background under --teal-deep text — and
+   adjusted where it fell short, while keeping each theme's hue identity. */
 :root[data-theme="berry"]{
   --teal-deep:#3B1230; --teal-mid:#5A1B48; --teal-line:#6E2B5A;
-  --turmeric:#E7622C; --chili:#C1447E; --leaf:#8C5B82;
+  --turmeric:#E7622C; --chili:#BD427B; --leaf:#8C5B82;
 }
 :root[data-theme="ocean"]{
   --teal-deep:#0E2A4A; --teal-mid:#154072; --teal-line:#23598F;
-  --turmeric:#2CB5E7; --chili:#C16B2C; --leaf:#2C8FE7;
+  --turmeric:#2CB5E7; --chili:#A55C25; --leaf:#2372B8;
 }
 :root[data-theme="mono"]{
   --teal-deep:#1C1C1C; --teal-mid:#2E2E2E; --teal-line:#444444;
-  --turmeric:#D8D8D8; --chili:#8A8A8A; --leaf:#B5B5B5;
+  --turmeric:#D8D8D8; --chili:#6D6D6D; --leaf:#6C6C6C;
   --cream:#F2F0EC;
 }
+:root[data-theme="sunset"]{
+  --teal-deep:#4A1F1A; --teal-mid:#6B2E22; --teal-line:#8A4332;
+  --turmeric:#F2994A; --chili:#BB4D30; --leaf:#9A612B;
+}
+:root[data-theme="forest"]{
+  --teal-deep:#1B3B1F; --teal-mid:#2A572F; --teal-line:#3C6F42;
+  --turmeric:#C9D96B; --chili:#B45331; --leaf:#517A41;
+}
+:root[data-theme="lavender"]{
+  --teal-deep:#2E1F42; --teal-mid:#452E63; --teal-line:#5C3E82;
+  --turmeric:#D9A5F2; --chili:#AC4C96; --leaf:#7A5FBA;
+}
 *{box-sizing:border-box;}
+
+/* ---------------- ACCESSIBILITY ---------------- */
+.visually-hidden{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+.skip-link{
+  position:absolute; left:8px; top:-48px;
+  background:var(--chili); color:var(--white);
+  padding:10px 16px; border-radius:8px;
+  font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:13px;
+  text-decoration:none; z-index:200;
+  transition:top .15s ease;
+}
+.skip-link:focus{ top:8px; }
+
+/* A visible focus ring on every interactive element, keyed off
+   :focus-visible so it only shows for keyboard focus (not every mouse
+   click) — matches what sighted keyboard users and screen-reader users both
+   need, without adding a ring to every mouse tap. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+  outline:3px solid var(--turmeric);
+  outline-offset:2px;
+}
+/* Circular swatches need a bit more offset so the ring doesn't get clipped
+   by neighbouring swatches, and the custom-colour label needs its own ring
+   since it's not a <button>. */
+.swatch:focus-visible{ outline-offset:3px; }
+.day-card:focus-visible{ outline:3px solid var(--turmeric); outline-offset:2px; }
 body{
   margin:0;
   background:var(--teal-deep);
@@ -128,6 +177,17 @@ body{
 .swatch-berry{ background:linear-gradient(135deg, #3B1230, #E7622C); }
 .swatch-ocean{ background:linear-gradient(135deg, #0E2A4A, #2CB5E7); }
 .swatch-mono{ background:linear-gradient(135deg, #1C1C1C, #D8D8D8); }
+.swatch-sunset{ background:linear-gradient(135deg, #4A1F1A, #F2994A); }
+.swatch-forest{ background:linear-gradient(135deg, #1B3B1F, #C9D96B); }
+.swatch-lavender{ background:linear-gradient(135deg, #2E1F42, #D9A5F2); }
+.swatch-custom{
+  background:conic-gradient(from 180deg, #E7A72C, #C1442D, #5B8C5A, #2CB5E7, #E7A72C);
+  position:relative; display:flex; align-items:center; justify-content:center;
+}
+.swatch-custom::after{ content:"+"; color:#fff; font-size:13px; font-weight:800; text-shadow:0 1px 2px rgba(0,0,0,0.5); }
+.custom-color-input{
+  position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;
+}
 .install-btn{
   margin-left:auto;
   background:rgba(255,255,255,0.08); border:1px solid var(--teal-line); color:var(--cream);
@@ -135,6 +195,31 @@ body{
   padding:7px 12px; border-radius:8px; cursor:pointer;
 }
 .install-btn.hidden{ display:none; }
+
+/* ---------------- LANGUAGE ROW ---------------- */
+.lang-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }
+.lang-buttons{ display:flex; gap:6px; }
+.lang-btn{
+  background:rgba(255,255,255,0.06); border:1px solid var(--teal-line); color:#D9D3C1;
+  font-family:'Plus Jakarta Sans', sans-serif; font-weight:700; font-size:11.5px;
+  padding:6px 11px; border-radius:999px; cursor:pointer;
+}
+.lang-btn.active{ background:var(--turmeric); border-color:var(--turmeric); color:var(--teal-deep); }
+.offline-indicator{
+  margin:12px 0 0;
+  font-size:11.5px; font-weight:600; color:var(--turmeric);
+  background:rgba(231,167,44,0.12); border:1px solid rgba(231,167,44,0.3);
+  border-radius:8px; padding:8px 12px;
+}
+.offline-indicator.hidden{ display:none; }
+
+.update-banner{
+  position:fixed; left:0; right:0; top:0;
+  background:var(--turmeric); color:var(--teal-deep);
+  text-align:center; font-size:12.5px; font-weight:700;
+  padding:10px 16px; cursor:pointer; z-index:100;
+}
+.update-banner u{ text-decoration-thickness:1.5px; }
 
 /* ---------------- TAB BAR ---------------- */
 .tab-bar{ display:flex; gap:8px; padding:16px 14px 0; }
@@ -169,6 +254,7 @@ body{
 .today-card .meal-icon{ color:#B9C9C6; }
 .today-card .meal-name{ color:var(--cream); }
 .today-card .time-badge{ color:#B9C9C6; }
+.today-card .cal-badge{ color:var(--turmeric); }
 .today-card .ingredients-list{ color:#9FB3B0; }
 .today-card .buy-btn.ingredients{ background:rgba(251,243,228,0.14); color:var(--cream); }
 .meal-row.current{ background:rgba(231,167,44,0.14); position:relative; }
@@ -367,6 +453,10 @@ body{
 }
 .meal-row.search-match{ background:rgba(231,167,44,0.22); }
 .meal-row.search-dim{ opacity:0.35; }
+.search-no-results{
+  margin:8px 14px 0; font-size:12px; color:var(--turmeric); text-align:center;
+}
+.search-no-results.hidden{ display:none; }
 
 .schedule-section{ padding:22px 14px 0; }
 .empty-state{
@@ -405,9 +495,11 @@ body{
   padding:12px 16px 8px;
   border-bottom:1px solid #EADFC2;
 }
-.day-card.is-today .day-title{ color:var(--turmeric); }
+.day-card.is-today .day-title{ color:var(--chili); } /* was var(--turmeric): only 1.91:1 against the cream
+  card surface, well short of WCAG AA's 4.5:1 for text. --chili clears 4.5:1+ in every theme and still
+  reads as an accent colour here; the gold border on the card already signals "today" visually. */
 .day-card.is-today .day-title::after{
-  content:" · today";
+  content:attr(data-today-tag);
   font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--chili); font-weight:700;
 }
 
@@ -431,6 +523,7 @@ body{
 .tag.readymade{ background:rgba(193,68,45,0.15); color:var(--chili); }
 .peppers{ color:var(--chili); font-size:11px; }
 .time-badge{ font-size:10.5px; color:var(--ink-soft); white-space:nowrap; }
+.cal-badge{ font-size:10.5px; color:var(--chili); white-space:nowrap; font-weight:600; }
 .ingredients-list{ font-size:10.5px; color:var(--ink-soft); margin:5px 0 0; line-height:1.4; }
 
 .buy-row{ display:flex; gap:8px; flex-wrap:wrap; padding-left:72px; }
@@ -539,6 +632,24 @@ body{
   font-family:'Plus Jakarta Sans', sans-serif; font-size:12px; color:var(--ink);
 }
 
+/* ---------------- NUTRITION ---------------- */
+.nutrition-content{ display:flex; flex-direction:column; gap:16px; margin-top:6px; }
+.nutrition-stat-row{ display:flex; gap:10px; }
+.nutrition-stat{
+  flex:1; background:var(--white); border:1px solid #EADFC2; border-radius:10px;
+  padding:12px; text-align:center;
+}
+.nutrition-stat .n-value{ font-family:'Playfair Display', serif; font-size:22px; font-weight:700; color:var(--teal-deep); }
+.nutrition-stat .n-label{ font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+.nutrition-day-bars{ display:flex; flex-direction:column; gap:8px; }
+.nutrition-day-row{ display:flex; align-items:center; gap:10px; }
+.nutrition-day-row .nd-label{ width:78px; font-size:11px; color:var(--ink-soft); flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nutrition-day-row .nd-bar-track{ flex:1; background:#EFE6CC; border-radius:6px; height:14px; overflow:hidden; }
+.nutrition-day-row .nd-bar-fill{ height:100%; background:var(--leaf); border-radius:6px; }
+.nutrition-day-row .nd-kcal{ width:70px; text-align:right; font-size:11px; font-weight:700; color:var(--ink); flex-shrink:0; }
+.nutrition-day-row.is-today-row .nd-label{ color:var(--chili); font-weight:700; }
+.nutrition-day-row.is-today-row .nd-bar-fill{ background:var(--turmeric); }
+
 .prep-checklist{ display:flex; flex-direction:column; gap:10px; }
 .prep-item{
   display:flex; align-items:flex-start; gap:10px;
@@ -552,6 +663,12 @@ body{
 
 /* ---------------- MY PLANS ---------------- */
 .my-plans-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+.backup-restore-row{
+  margin-top:18px; padding-top:16px; border-top:1px dashed #D8CBA9;
+}
+.backup-restore-label{ font-size:11.5px; color:var(--ink-soft); margin:0 0 10px; line-height:1.5; }
+.backup-restore-buttons{ display:flex; gap:8px; }
+.backup-restore-buttons .secondary-btn{ flex:1; font-size:12px; padding:9px 10px; }
 .my-plans-empty{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding:16px; }
 .plan-item{
   display:flex; align-items:center; gap:10px;
@@ -606,4 +723,46 @@ body{
 .site-footer{
   text-align:center; color:#8FA3A0; font-size:10.5px;
   padding:30px 20px 20px; letter-spacing:.03em; line-height:1.6;
+}
+
+/* ---------------- PRINT / PDF ----------------
+   The browser's own "Save as PDF" print destination produces the actual PDF —
+   no library, works offline. This stylesheet just turns the dark app UI into
+   a clean black-on-white document. */
+.print-only-header{ display:none; }
+
+@media print{
+  .skip-link, .hero .live-strip, .theme-row, .lang-row, .offline-indicator,
+  .tab-bar, .controls-card, .search-row, #searchNoResults,
+  .floating-actions, .modal-overlay, .toast, .update-banner,
+  .site-footer, #kidsView{ display:none !important; }
+
+  .print-only-header{ display:block; text-align:center; margin:0 0 16px; }
+  .print-only-header h1{ font-family:'Playfair Display', serif; font-size:22px; margin:0 0 4px; color:#000; }
+  .print-only-header p{ font-size:11px; color:#444; margin:0; }
+
+  body, .app-container{ background:#fff !important; color:#000 !important; }
+  .hero{ background:#fff !important; border:none !important; padding:0 0 8px !important; }
+  .hero .tagline, .hero .headline, .hero .headline em, .hero .effort-legend{
+    color:#000 !important; background:none !important; border:none !important;
+  }
+  .headline{ font-size:20px !important; }
+  .subheadline{ display:none; }
+
+  .schedule-section{ padding:0 !important; }
+  .week-head{ color:#000 !important; margin:18px 0 8px; break-after:avoid; }
+  .week-head .wk-num{ color:#000 !important; }
+  .week-head .wk-label{ color:#555 !important; }
+  .week-head hr{ border-top:1px solid #ccc !important; }
+
+  .day-card{ background:#fff !important; box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+  .day-card.is-today{ border:1.5px solid #000 !important; }
+  .day-title, .day-card.is-today .day-title, .day-card.is-today .day-title::after{ color:#000 !important; }
+  .day-title{ border-bottom:1px solid #ddd !important; }
+
+  .meal-name, .ingredients-list, .time-badge, .cal-badge, .meal-icon, .peppers{ color:#000 !important; }
+  .tag{ border:1px solid #999 !important; background:none !important; color:#000 !important; }
+
+  /* Buy buttons are live Amazon links — meaningless on paper */
+  .buy-row{ display:none !important; }
 }
