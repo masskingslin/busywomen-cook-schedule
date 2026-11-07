@@ -1,0 +1,10 @@
+{
+  "name": "busywomen-cook-schedule",
+  "version": "7.0.0",
+  "private": true,
+  "description": "Month-long meal planner. Static site — no build step. Tests need only Node (no dependencies).",
+  "scripts": {
+    "test": "node tests/test_all.js",
+    "test:mutation": "bash tests/mutate.sh"
+  }
+}

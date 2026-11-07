@@ -7,23 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=3" />
+  <link rel="stylesheet" href="css/styles.css?v=5" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#123B3A" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cook Schedule" />
 </head>
 <body>
+  <a href="#mainContent" class="skip-link" data-i18n="skipLink">Skip to meal planner</a>
   <div class="app-container">
     <header class="hero">
-      <p class="tagline">/// 4-week rotation, zero repeats per week</p>
+      <p class="tagline" data-i18n="tagline">/// 4-week rotation, zero repeats per week</p>
       <h1 class="headline">Busywomen<br><em>Cook Schedule</em></h1>
-      <p class="subheadline">
+      <p class="subheadline" data-i18n="subheadline">
         Set your dietary preference, cooking effort, and time window. We build your complete breakfast, lunch, and dinner calendar with auto-generated grocery lists, weekend batch-prep blueprints, and direct calendar synchronization.
       </p>
       
       <div class="effort-legend">
-        <span>🌶 <b>1</b> = quick/easy</span>
-        <span>🌶🌶 <b>2</b> = moderate</span>
-        <span>🌶🌶🌶 <b>3</b> = weekend style</span>
+        <span data-i18n="effortLegend1">🌶 <b>1</b> = quick/easy</span>
+        <span data-i18n="effortLegend2">🌶🌶 <b>2</b> = moderate</span>
+        <span data-i18n="effortLegend3">🌶🌶🌶 <b>3</b> = weekend style</span>
       </div>
 
       <div class="live-strip">
@@ -34,84 +40,100 @@
       </div>
 
       <div class="theme-row">
-        <span class="theme-label">Theme</span>
+        <span class="theme-label" data-i18n="themeLabel">Theme</span>
         <div class="theme-swatches" id="themeSwatches">
-          <button type="button" class="swatch swatch-teal active" data-theme="teal" aria-label="Teal theme"></button>
-          <button type="button" class="swatch swatch-berry" data-theme="berry" aria-label="Berry theme"></button>
-          <button type="button" class="swatch swatch-ocean" data-theme="ocean" aria-label="Ocean theme"></button>
-          <button type="button" class="swatch swatch-mono" data-theme="mono" aria-label="Mono theme"></button>
+          <button type="button" class="swatch swatch-teal active" data-theme="teal" aria-pressed="true" aria-label="Teal theme"></button>
+          <button type="button" class="swatch swatch-berry" data-theme="berry" aria-pressed="false" aria-label="Berry theme"></button>
+          <button type="button" class="swatch swatch-ocean" data-theme="ocean" aria-pressed="false" aria-label="Ocean theme"></button>
+          <button type="button" class="swatch swatch-mono" data-theme="mono" aria-pressed="false" aria-label="Mono theme"></button>
+          <button type="button" class="swatch swatch-sunset" data-theme="sunset" aria-pressed="false" aria-label="Sunset theme"></button>
+          <button type="button" class="swatch swatch-forest" data-theme="forest" aria-pressed="false" aria-label="Forest theme"></button>
+          <button type="button" class="swatch swatch-lavender" data-theme="lavender" aria-pressed="false" aria-label="Lavender theme"></button>
+          <label class="swatch swatch-custom" data-theme="custom" aria-label="Custom accent colour">
+            <input type="color" id="customColorInput" class="custom-color-input" value="#E7A72C" />
+          </label>
         </div>
-        <button type="button" id="installAppBtn" class="install-btn hidden">📲 Install App</button>
+        <button type="button" id="installAppBtn" class="install-btn hidden" data-i18n="installApp">📲 Install App</button>
       </div>
+      <div class="lang-row">
+        <span class="theme-label" data-i18n="langLabel">Language</span>
+        <div class="lang-buttons" id="langButtons" role="radiogroup" aria-label="Language">
+          <button type="button" class="lang-btn active" data-lang="en" role="radio" aria-checked="true" lang="en">English</button>
+          <button type="button" class="lang-btn" data-lang="hi" role="radio" aria-checked="false" lang="hi">हिन्दी</button>
+          <button type="button" class="lang-btn" data-lang="ta" role="radio" aria-checked="false" lang="ta">தமிழ்</button>
+        </div>
+      </div>
+
+      <p class="offline-indicator hidden" id="offlineIndicator" data-i18n="offlineMsg">📡 You're offline — showing your last saved plan</p>
     </header>
 
     <!-- Tabs: Meal Schedule vs Kids' Best Deals -->
-    <div class="tab-bar">
-      <button class="tab-btn active" id="tabSchedule" data-tab="schedule">📅 Meal Schedule</button>
-      <button class="tab-btn" id="tabKids" data-tab="kids">🧒 Kids' Best Deals</button>
+    <div class="tab-bar" role="tablist" aria-label="View">
+      <button class="tab-btn active" id="tabSchedule" data-tab="schedule" role="tab" aria-selected="true" aria-controls="scheduleView" data-i18n="tabSchedule">📅 Meal Schedule</button>
+      <button class="tab-btn" id="tabKids" data-tab="kids" role="tab" aria-selected="false" aria-controls="kidsView" data-i18n="tabKids">🧒 Kids' Best Deals</button>
     </div>
 
-    <div id="scheduleView">
+    <div id="scheduleView" role="tabpanel" aria-labelledby="tabSchedule">
     <div id="todaySlot"></div>
 
-    <main class="planner-layout">
+    <main class="planner-layout" id="mainContent" tabindex="-1">
       <!-- Filter & Configuration Controls -->
       <section class="controls-card">
         <div class="controls-head-row">
-          <h2>Build your month</h2>
+          <h2 data-i18n="buildMonth">Build your month</h2>
           <div class="controls-head-links">
-            <button type="button" id="openMyPlansBtn" class="text-action-btn">📚 My Plans</button>
-            <button type="button" id="openExcludedBtn" class="text-action-btn">🚫 Excluded dishes</button>
-            <button type="button" id="clearSavedPlanBtn" class="text-action-btn">🗑️ Clear saved plan</button>
+            <button type="button" id="openMyPlansBtn" class="text-action-btn" data-i18n="myPlans">📚 My Plans</button>
+            <button type="button" id="openExcludedBtn" class="text-action-btn" data-i18n="excludedDishes">🚫 Excluded dishes</button>
+            <button type="button" id="clearSavedPlanBtn" class="text-action-btn" data-i18n="clearSavedPlan">🗑️ Clear saved plan</button>
           </div>
         </div>
 
         <div class="control-group">
-          <label>Food Type</label>
-          <div class="pill-selector" id="dietFilter">
-            <button type="button" class="pill active" data-value="all">All Styles</button>
-            <button type="button" class="pill" data-value="veg">🌿 Veg</button>
-            <button type="button" class="pill" data-value="non-veg">🍗 Non-veg</button>
-            <button type="button" class="pill" data-value="south-indian">🥥 South Indian</button>
+          <label id="dietFilterLabel" data-i18n="foodType">Food Type</label>
+          <div class="pill-selector" id="dietFilter" role="radiogroup" aria-labelledby="dietFilterLabel">
+            <button type="button" class="pill active" data-value="all" role="radio" aria-checked="true" data-i18n="allStyles">All Styles</button>
+            <button type="button" class="pill" data-value="veg" role="radio" aria-checked="false" data-i18n="veg">🌿 Veg</button>
+            <button type="button" class="pill" data-value="non-veg" role="radio" aria-checked="false" data-i18n="nonVeg">🍗 Non-veg</button>
+            <button type="button" class="pill" data-value="south-indian" role="radio" aria-checked="false" data-i18n="southIndian">🥥 South Indian</button>
           </div>
         </div>
 
         <div class="control-group">
-          <label>Max Effort Level</label>
-          <div class="pill-selector" id="effortFilter">
-            <button type="button" class="pill active" data-value="3">Any Effort</button>
-            <button type="button" class="pill" data-value="1">🌶 Easy Only</button>
-            <button type="button" class="pill" data-value="2">🌶🌶 Up to Medium</button>
+          <label id="effortFilterLabel" data-i18n="maxEffort">Max Effort Level</label>
+          <div class="pill-selector" id="effortFilter" role="radiogroup" aria-labelledby="effortFilterLabel">
+            <button type="button" class="pill active" data-value="3" role="radio" aria-checked="true" data-i18n="anyEffort">Any Effort</button>
+            <button type="button" class="pill" data-value="1" role="radio" aria-checked="false" data-i18n="easyOnly">🌶 Easy Only</button>
+            <button type="button" class="pill" data-value="2" role="radio" aria-checked="false" data-i18n="upToMedium">🌶🌶 Up to Medium</button>
           </div>
         </div>
 
         <div class="control-group">
-          <label>Family Serving Scale</label>
-          <div class="pill-selector" id="portionFilter">
-            <button type="button" class="pill" data-value="1">1 Person</button>
-            <button type="button" class="pill active" data-value="2">2 People</button>
-            <button type="button" class="pill" data-value="4">Family (4)</button>
+          <label id="portionFilterLabel" data-i18n="familyScale">Family Serving Scale</label>
+          <div class="pill-selector" id="portionFilter" role="radiogroup" aria-labelledby="portionFilterLabel">
+            <button type="button" class="pill" data-value="1" role="radio" aria-checked="false" data-i18n="onePerson">1 Person</button>
+            <button type="button" class="pill active" data-value="2" role="radio" aria-checked="true" data-i18n="twoPeople">2 People</button>
+            <button type="button" class="pill" data-value="4" role="radio" aria-checked="false" data-i18n="familyFour">Family (4)</button>
           </div>
         </div>
 
         <div class="control-group">
           <div class="label-header-row">
-            <label>Meal Hours (For Calendar Export)</label>
-            <button type="button" id="resetPreferencesBtn" class="text-action-btn">↺ Reset to defaults</button>
+            <label data-i18n="mealHours">Meal Hours (For Calendar Export)</label>
+            <button type="button" id="resetPreferencesBtn" class="text-action-btn" data-i18n="resetDefaults">↺ Reset to defaults</button>
           </div>
           <div class="time-pickers-row">
-            <div class="time-field">
-              <span>🍳 Breakfast</span>
+            <label class="time-field" for="breakfastTime">
+              <span><span aria-hidden="true">🍳</span> <span data-i18n="breakfastLabel">Breakfast</span></span>
               <input type="time" id="breakfastTime" value="08:00" />
-            </div>
-            <div class="time-field">
-              <span>🍛 Lunch</span>
+            </label>
+            <label class="time-field" for="lunchTime">
+              <span><span aria-hidden="true">🍛</span> <span data-i18n="lunchLabel">Lunch</span></span>
               <input type="time" id="lunchTime" value="13:00" />
-            </div>
-            <div class="time-field">
-              <span>🍲 Dinner</span>
+            </label>
+            <label class="time-field" for="dinnerTime">
+              <span><span aria-hidden="true">🍲</span> <span data-i18n="dinnerLabel">Dinner</span></span>
               <input type="time" id="dinnerTime" value="20:00" />
-            </div>
+            </label>
           </div>
         </div>
 
@@ -119,49 +141,71 @@
           <label class="switch-label">
             <input type="checkbox" id="quickTimeOnly" />
             <span class="slider"></span>
-            <span class="switch-text">⏱ Quick only (≤20 min)</span>
+            <span class="switch-text" data-i18n="quickOnly">⏱ Quick only (≤20 min)</span>
+          </label>
+        </div>
+
+        <div class="control-group inline-toggle">
+          <label class="switch-label">
+            <input type="checkbox" id="lightMealsOnly" />
+            <span class="slider"></span>
+            <span class="switch-text" data-i18n="lightOnly">🔥 Light meals only (&lt;300 kcal, estimated)</span>
           </label>
         </div>
 
         <div class="control-group">
-          <button type="button" id="budgetPicksToggle" class="pill budget-pill" data-active="false">
+          <button type="button" id="budgetPicksToggle" class="pill budget-pill" data-active="false" aria-pressed="false" data-i18n="budgetPicks">
             💰 Budget picks (cheaper half of matching dishes)
           </button>
         </div>
 
-        <button id="generateBtn" class="primary-btn">Generate Month Schedule</button>
+        <button id="generateBtn" class="primary-btn" data-i18n="generateBtn">Generate Month Schedule</button>
       </section>
 
       <!-- Search + jump-to-today -->
       <div class="search-row">
         <div class="search-field">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="dishSearchInput" placeholder="Find a dish in your plan" />
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <label for="dishSearchInput" class="visually-hidden" data-i18n="searchLabel">Find a dish in your plan</label>
+          <input type="text" id="dishSearchInput" placeholder="Find a dish in your plan" data-i18n-placeholder="searchPlaceholder" />
         </div>
-        <button type="button" id="jumpTodayBtn" class="today-jump-btn">📍 Today</button>
+        <button type="button" id="jumpTodayBtn" class="today-jump-btn" data-i18n="todayBtn">📍 Today</button>
+      </div>
+      <p id="searchNoResults" class="search-no-results hidden"></p>
+
+      <!-- Shown only when printing (see @media print in styles.css) -->
+      <div class="print-only-header">
+        <h1>Busywomen Cook Schedule</h1>
+        <p id="printGeneratedDate"></p>
       </div>
 
       <!-- Schedule Results -->
       <section id="scheduleOutput" class="schedule-section">
-        <div class="empty-state">
+        <div class="empty-state" id="scheduleEmptyState">
           Set your filters above and tap <b>Generate Month Schedule</b> to view your meal blueprint.
         </div>
       </section>
     </main>
     </div>
 
-    <div id="kidsView" style="display:none;"></div>
+    <div id="kidsView" style="display:none;" role="tabpanel" aria-labelledby="tabKids"></div>
 
     <!-- Floating Quick Actions Bar -->
     <aside id="floatingActionBar" class="floating-actions hidden">
       <button id="openGroceryBtn" class="action-btn">
-        🛒 <span>Grocery List</span>
+        🛒 <span data-i18n="groceryListBtn">Grocery List</span>
       </button>
       <button id="openPrepBtn" class="action-btn">
-        ⚡ <span>Sunday Prep Guide</span>
+        ⚡ <span data-i18n="prepGuideBtn">Sunday Prep Guide</span>
+      </button>
+      <button id="openNutritionBtn" class="action-btn">
+        📊 <span data-i18n="nutritionBtn">Nutrition</span>
       </button>
       <button id="shareWhatsAppBtn" class="action-btn">
-        💬 <span>Share Plan</span>
+        💬 <span data-i18n="sharePlanBtn">Share Plan</span>
+      </button>
+      <button id="printPlanBtn" class="action-btn">
+        🖨️ <span data-i18n="printBtn">Print / PDF</span>
       </button>
       <div class="calendar-export-group">
         <select id="reminderInterval" class="reminder-select" aria-label="Set reminder alert">
@@ -172,73 +216,98 @@
           <option value="none">🔕 No reminder</option>
         </select>
         <button id="exportCalendarBtn" class="action-btn">
-          📅 <span>Export .ics</span>
+          📅 <span data-i18n="exportCalBtn">Export .ics</span>
         </button>
       </div>
     </aside>
 
     <!-- Modal Drawer: Smart Grocery List -->
-    <div id="groceryModal" class="modal-overlay hidden">
+    <div id="groceryModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="groceryModalTitle" tabindex="-1">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>Smart Grocery Aggregator</h3>
-          <button class="close-modal" data-target="groceryModal">&times;</button>
+          <h3 id="groceryModalTitle" data-i18n="groceryTitle">Smart Grocery Aggregator</h3>
+          <button class="close-modal" data-target="groceryModal" aria-label="Close">&times;</button>
         </div>
-        <p class="modal-sub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
+        <p class="modal-sub" data-i18n="grocerySub">Aggregated ingredients for your selected month schedule (scaled by family size).</p>
         <div id="groceryListContent" class="grocery-grid"></div>
         <div id="manualCopyBox" class="manual-copy-box hidden">
           <p class="manual-copy-label">Auto-copy isn't available here — tap the list below, select all, then copy:</p>
           <textarea id="manualCopyText" class="manual-copy-textarea" readonly rows="6"></textarea>
         </div>
         <div class="modal-footer">
-          <button id="copyGroceryBtn" class="secondary-btn">📤 Share / Copy</button>
-          <button class="primary-btn close-modal" data-target="groceryModal">Done</button>
+          <button id="copyGroceryBtn" class="secondary-btn" data-i18n="copyShareBtn">📤 Share / Copy</button>
+          <button class="primary-btn close-modal" data-target="groceryModal" data-i18n="doneBtn">Done</button>
         </div>
       </div>
     </div>
 
     <!-- Modal Drawer: Sunday Batch Prep -->
-    <div id="prepModal" class="modal-overlay hidden">
+    <div id="prepModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="prepModalTitle" tabindex="-1">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>Sunday 45-Min Power Prep</h3>
-          <button class="close-modal" data-target="prepModal">&times;</button>
+          <h3 id="prepModalTitle" data-i18n="prepTitle">Sunday 45-Min Power Prep</h3>
+          <button class="close-modal" data-target="prepModal" aria-label="Close">&times;</button>
         </div>
-        <p class="modal-sub">Spend 45 minutes on Sunday to reduce weekday cooking effort to under 15 minutes.</p>
+        <p class="modal-sub" data-i18n="prepSub">Spend 45 minutes on Sunday to reduce weekday cooking effort to under 15 minutes.</p>
         <div id="prepListContent" class="prep-checklist"></div>
         <div class="modal-footer">
-          <button class="primary-btn close-modal" data-target="prepModal">Ready for the Week</button>
+          <button class="primary-btn close-modal" data-target="prepModal" data-i18n="readyWeekBtn">Ready for the Week</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Drawer: Nutrition Summary -->
+    <div id="nutritionModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nutritionModalTitle" tabindex="-1">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="nutritionModalTitle" data-i18n="nutritionTitle">Nutrition Summary</h3>
+          <button class="close-modal" data-target="nutritionModal" aria-label="Close">&times;</button>
+        </div>
+        <p class="modal-sub" data-i18n="nutritionSub">Estimated calories only — there's no real nutrition database behind this app, so treat these as rough ballparks for planning, not a dietary tool.</p>
+        <div id="nutritionContent" class="nutrition-content"></div>
+        <div class="modal-footer">
+          <button class="primary-btn close-modal" data-target="nutritionModal" data-i18n="doneBtn">Done</button>
         </div>
       </div>
     </div>
 
     <!-- Modal Drawer: My Plans -->
-    <div id="myPlansModal" class="modal-overlay hidden">
+    <div id="myPlansModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="myPlansModalTitle" tabindex="-1">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>My Plans</h3>
-          <button class="close-modal" data-target="myPlansModal">&times;</button>
+          <h3 id="myPlansModalTitle" data-i18n="myPlansTitle">My Plans</h3>
+          <button class="close-modal" data-target="myPlansModal" aria-label="Close">&times;</button>
         </div>
-        <p class="modal-sub">Save your current month so you can come back to it later, even after generating a new one.</p>
-        <button type="button" id="savePlanBtn" class="secondary-btn full-width">💾 Save current plan</button>
+        <p class="modal-sub" data-i18n="myPlansSub">Save your current month so you can come back to it later, even after generating a new one.</p>
+        <button type="button" id="savePlanBtn" class="secondary-btn full-width" data-i18n="savePlanBtn">💾 Save current plan</button>
         <div id="myPlansList" class="my-plans-list"></div>
+
+        <div class="backup-restore-row">
+          <p class="backup-restore-label" data-i18n="backupLabel">Moving to a new phone, or just want a safety copy? Back up everything (saved plans, excluded dishes, theme) to one file.</p>
+          <div class="backup-restore-buttons">
+            <button type="button" id="exportBackupBtn" class="secondary-btn" data-i18n="exportBackupBtn">⬇️ Export Backup</button>
+            <button type="button" id="importBackupBtn" class="secondary-btn" data-i18n="importBackupBtn">⬆️ Import Backup</button>
+          </div>
+          <input type="file" id="importBackupFile" accept="application/json" class="visually-hidden" aria-label="Choose a backup file to import" />
+        </div>
+
         <div class="modal-footer">
-          <button class="primary-btn close-modal" data-target="myPlansModal">Done</button>
+          <button class="primary-btn close-modal" data-target="myPlansModal" data-i18n="doneBtn">Done</button>
         </div>
       </div>
     </div>
 
     <!-- Modal Drawer: Excluded Dishes -->
-    <div id="excludedModal" class="modal-overlay hidden">
+    <div id="excludedModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="excludedModalTitle" tabindex="-1">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>Excluded Dishes</h3>
-          <button class="close-modal" data-target="excludedModal">&times;</button>
+          <h3 id="excludedModalTitle" data-i18n="excludedTitle">Excluded Dishes</h3>
+          <button class="close-modal" data-target="excludedModal" aria-label="Close">&times;</button>
         </div>
-        <p class="modal-sub">Dishes you check here are left out of every future "Generate Month Schedule" — handy for allergies or things your family just won't eat.</p>
+        <p class="modal-sub" data-i18n="excludedSub">Dishes you check here are left out of every future "Generate Month Schedule" — handy for allergies or things your family just won't eat.</p>
         <div id="excludedListContent" class="excluded-list"></div>
         <div class="modal-footer">
-          <button class="primary-btn close-modal" data-target="excludedModal">Done</button>
+          <button class="primary-btn close-modal" data-target="excludedModal" data-i18n="doneBtn">Done</button>
         </div>
       </div>
     </div>
@@ -247,15 +316,16 @@
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
     <footer class="site-footer">
-      <button type="button" id="shareAppBtn" class="footer-link-btn">📣 Share this app</button>
+      <button type="button" id="shareAppBtn" class="footer-link-btn" data-i18n="shareAppBtn">📣 Share this app</button>
       &middot;
-      <button type="button" id="copyLinkBtn" class="footer-link-btn">🔗 Copy link</button><br>
-      BUSYWOMEN COOK SCHEDULE · PLAN ONCE, COOK ALL MONTH<br>
-      As an Amazon Associate, this app earns from qualifying purchases
+      <button type="button" id="copyLinkBtn" class="footer-link-btn" data-i18n="copyLinkBtn">🔗 Copy link</button><br>
+      <span data-i18n="footerLine1">BUSYWOMEN COOK SCHEDULE · PLAN ONCE, COOK ALL MONTH</span><br>
+      <span data-i18n="footerLine2">As an Amazon Associate, this app earns from qualifying purchases</span>
     </footer>
   </div>
 
-  <script src="js/data.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/i18n.js?v=1"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>
